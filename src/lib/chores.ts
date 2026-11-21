@@ -1,8 +1,8 @@
 import type { CookAssignment, DishesAssignment, Meal } from "./types";
 
 /**
- * Fair chore assignment, shared by the server (auto-assign on new meals, the
- * "Assign chores" button) and the browser (tallies, previews).
+ * Fair chore assignment, used by the server when new meals are added (or a
+ * week is repeated) with rotation turned on in Admin → Settings → Chores.
  *
  * Fairness is per week: within the week of each meal, whoever has done the
  * chore the fewest times gets it next. Ties go to whoever's turn is "earliest"
@@ -43,7 +43,7 @@ function pick(candidates: string[], counts: Map<string, number>, memberIds: stri
 
 /**
  * Fill in missing cooks/dishwashers on the meals listed in `targetIds`,
- * following `rules`. Existing assignments are kept (unless `reassign` is set).
+ * following `rules`. Existing assignments are always kept.
  * `allMeals` is the whole plan so counts include meals already assigned.
  * `weekAnchor` is any week-start date (aligns the 7-day fairness windows).
  * Returns the updated full meal list and how many chores were filled.
@@ -54,14 +54,10 @@ export function assignChores(opts: {
   memberIds: string[];
   rules: ChoreRules;
   weekAnchor: string;
-  /** Treat both chores as "rotate" for this run (the planner button), ignoring "manual". */
-  forceRotate?: boolean;
-  reassign?: boolean;
 }): { meals: Meal[]; filled: number } {
-  const { memberIds, weekAnchor, reassign } = opts;
-  const cookMode: CookAssignment = opts.forceRotate ? "rotate" : opts.rules.cookAssignment;
-  const dishesMode: DishesAssignment =
-    opts.forceRotate && opts.rules.dishesAssignment === "manual" ? "not-cook" : opts.rules.dishesAssignment;
+  const { memberIds, weekAnchor } = opts;
+  const cookMode: CookAssignment = opts.rules.cookAssignment;
+  const dishesMode: DishesAssignment = opts.rules.dishesAssignment;
   if (!memberIds.length) return { meals: opts.allMeals, filled: 0 };
 
   const meals = opts.allMeals.map((m) => ({ ...m, dishesId: m.dishesId ?? null }));
@@ -79,10 +75,6 @@ export function assignChores(opts: {
     const sameWeek = meals.filter((m) => m.id !== meal.id && weekKey(m.date, weekAnchor) === week);
     const rotation = ((week % memberIds.length) + memberIds.length) % memberIds.length;
 
-    if (reassign) {
-      if (cookMode === "rotate") meal.cookId = null;
-      if (dishesMode !== "manual") meal.dishesId = null;
-    }
     const hasCook = meal.cookId && members.has(meal.cookId);
     if (!hasCook && cookMode === "rotate") {
       // "Never the cook" works both ways: if the dishwasher was picked by hand, don't make them cook too.

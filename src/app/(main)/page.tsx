@@ -8,7 +8,6 @@ import { useForecast } from "@/components/useForecast";
 import { IngredientList } from "@/components/ui";
 import { addDays, DAY_NAMES, dayName, fromISODate, shortDate, weekDays, weekLabel, weekStart } from "@/lib/dates";
 import { formatAmount, roundUpQty, titleCase } from "@/lib/units";
-import { choreCounts } from "@/lib/chores";
 import type { Meal } from "@/lib/types";
 import { repeatCandidates, type MealForecast } from "@/lib/inventory";
 
@@ -34,15 +33,6 @@ export default function WeekPage() {
   const weekShortfalls = fc.shortfalls.filter((s) => s.neededBy <= days[6]);
   const nextWeekMeals = state.meals.filter((m) => m.date >= nextWeek && m.date <= addDays(nextWeek, 6)).length;
 
-  // Chores: who cooks / who does the dishes this week.
-  const memberIds = state.users.map((u) => u.id);
-  const isMember = (id: string | null | undefined) => !!id && memberIds.includes(id);
-  const plannedThisWeek = weekMeals.filter((m) => m.status === "planned");
-  const missingChores = plannedThisWeek.some((m) => !isMember(m.cookId) || !isMember(m.dishesId));
-  const hasChores = weekMeals.some((m) => m.cookId || m.dishesId);
-  const cookTally = choreCounts(weekMeals, memberIds, "cookId");
-  const dishesTally = choreCounts(weekMeals, memberIds, "dishesId");
-
   async function onDrop(e: React.DragEvent, date: string, slot: string) {
     e.preventDefault();
     setDragOver(null);
@@ -66,13 +56,6 @@ export default function WeekPage() {
   }
   const canRepeat = repeatCandidates(state.meals, start, addDays).length;
   const canRepeatNext = repeatCandidates(state.meals, nextWeek, addDays).length;
-
-  /** Fairly fill in missing cooks/dishwashers for this week (or redo them all). */
-  async function assignWeekChores(reassign = false) {
-    if (reassign && !confirm(`Reshuffle who cooks and who does dishes for every planned meal in ${weekLabel(start)}?`)) return;
-    const r = await api<{ filled: number }>("POST", "/api/meals/assign", { weekStart: start, ...(reassign ? { reassign: true } : {}) });
-    if (r) toast(r.filled ? `Assigned ${r.filled} chore${r.filled === 1 ? "" : "s"} fairly.` : "Everyone already has a job this week.");
-  }
 
   async function addShortfallsToList() {
     const items = weekShortfalls.map((s) => ({ name: s.name, quantity: roundUpQty(s.quantity), unit: s.unit }));
@@ -123,15 +106,6 @@ export default function WeekPage() {
               ↻ Repeat last week ({canRepeat})
             </button>
           )}
-          {missingChores && (
-            <button
-              className="btn-outline"
-              onClick={() => assignWeekChores()}
-              title="Fairly pick a cook and a dishwasher for planned meals that don't have one"
-            >
-              🧽 Assign chores
-            </button>
-          )}
           <button className="btn-outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">←</button>
           <button className="btn-outline" onClick={() => setStart(thisWeek)} disabled={start === thisWeek}>Today</button>
           <button className="btn-outline" onClick={() => setStart(addDays(start, 7))} aria-label="Next week">→</button>
@@ -145,21 +119,6 @@ export default function WeekPage() {
         <Stat label="Cooked" value={weekMeals.filter((m) => m.status === "cooked").length} tone="leaf" />
       </div>
 
-      {hasChores && (
-        <div className="card flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
-          <p className="text-xs font-bold tracking-wider text-ink/50 uppercase">Chores this week</p>
-          {state.users.map((u) => (
-            <span key={u.id}>
-              <b>{u.name}</b>: 🍳 {cookTally.get(u.id) ?? 0} · 🧽 {dishesTally.get(u.id) ?? 0}
-            </span>
-          ))}
-          {plannedThisWeek.length > 0 && (
-            <button className="btn-ghost btn-sm ml-auto" onClick={() => assignWeekChores(true)} title="Redo every cook and dishes pick for this week's planned meals">
-              ↻ Reshuffle
-            </button>
-          )}
-        </div>
-      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
         {days.map((d) => {

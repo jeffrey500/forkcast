@@ -242,8 +242,7 @@ function SettingsForm() {
         <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
           <h3 className="font-bold">Chores</h3>
           <p className="mt-1 text-xs text-ink/60">
-            Automatic picks only fill meals where nobody was chosen, and spread the work evenly within each week. The planner&apos;s
-            🧽 Assign chores button fills a whole week at once.
+            Automatic picks only fill meals where nobody was chosen, and spread the work evenly within each week.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>

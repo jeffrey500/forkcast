@@ -2,6 +2,12 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.6.2
+- Redesigned README with every feature and fresh screenshots.
+
+## 0.6.1
+- The planner no longer shows a "Chores this week" bar or an **Assign chores** button; each meal shows its own cook and dishwasher. Automatic rotation (Admin → Settings → Chores) still fills new meals.
+
 ## 0.6.0
 - **Who cooks and who does dishes:** every meal can have a cook and a dishwasher. Admins can set either to rotate fairly (dishes can be "never the cook"), and the planner's **Assign chores** button fills a week. The planner shows a weekly chores tally.
 - Evening reminders include tomorrow's cook and dishwasher.
