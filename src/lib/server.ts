@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { HttpError } from "./errors";
 import { read } from "./store";
 import { SESSION_COOKIE, verifySession } from "./session";
 import {
@@ -11,14 +12,7 @@ import {
   type User,
 } from "./types";
 
-export class HttpError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export { HttpError, SetupError } from "./errors";
 
 export const newId = () => crypto.randomUUID();
 export const nowIso = () => new Date().toISOString();
@@ -80,6 +74,7 @@ export function handle<Args extends unknown[]>(
       return NextResponse.json(out ?? { ok: true });
     } catch (err) {
       if (err instanceof HttpError) {
+        if (err.status >= 500) console.error(err.message);
         return NextResponse.json({ error: err.message }, { status: err.status });
       }
       console.error(err);

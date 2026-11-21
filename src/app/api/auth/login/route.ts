@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { read, update } from "@/lib/store";
 import { body, handle, HttpError, publicUser, str } from "@/lib/server";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
-import { signSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
+import { assertSessionSecret, signSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
 import type { User } from "@/lib/types";
 
 // Compared against when the email is unknown so timing doesn't reveal which emails exist.
@@ -13,6 +13,7 @@ const MAX_FAILURES = 8;
 const LOCK_MINUTES = 15;
 
 export const POST = handle(async (req: Request) => {
+  assertSessionSecret();
   rateLimit(`login:${clientIp(req)}`, 20, 10 * 60_000, "Too many sign-in attempts. Wait a few minutes.");
   const b = await body(req);
   const email = str(b.email, 200).toLowerCase();

@@ -1,7 +1,8 @@
 import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
-import { get, put, BlobAccessError, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, put, BlobAccessError, BlobError, BlobPreconditionFailedError, BlobStoreNotFoundError } from "@vercel/blob";
+import { SetupError } from "./errors";
 
 /**
  * JSON-file storage.
@@ -22,26 +23,35 @@ export type Collection =
   | "shopping"
   | "usage";
 
-const blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+// Connecting a Blob store in Vercel sets BLOB_READ_WRITE_TOKEN, or BLOB_STORE_ID
+// (credentials then come from Vercel's built-in OIDC token). Either works.
+const blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 const blobPath = (name: Collection) => `data/${name}.json`;
 const localDir = () => path.join(process.cwd(), ".data");
 const localPath = (name: Collection) => path.join(localDir(), `${name}.json`);
 
 function assertWritableEnv() {
   if (!blobEnabled() && process.env.VERCEL) {
-    throw new Error(
-      "Storage is not configured: connect a Vercel Blob store to this project so BLOB_READ_WRITE_TOKEN is set.",
+    throw new SetupError(
+      "connect a Vercel Blob store (Private access) to this project under Storage, then redeploy.",
     );
   }
 }
 
-/** Household data must never sit in a public store; say so clearly if it would. */
+/** Turn storage misconfiguration into a clear setup message (and log the original). */
 function explainBlobError(err: unknown): never {
-  if (err instanceof BlobAccessError || (err instanceof Error && /public|private|access/i.test(err.message))) {
-    console.error(
-      "Vercel Blob refused private access. Create the Blob store with *Private* access so household data is never publicly readable.",
-      err,
-    );
+  if (err instanceof BlobStoreNotFoundError) {
+    console.error(err);
+    throw new SetupError("the connected Vercel Blob store no longer exists. Connect a new Private store, then redeploy.");
+  }
+  if (err instanceof BlobAccessError || (err instanceof BlobError && /public|private|access/i.test(err.message))) {
+    console.error(err);
+    // Household data must never sit in a public store.
+    throw new SetupError("the Vercel Blob store must use Private access. Create a Private store, connect it, then redeploy.");
+  }
+  if (err instanceof BlobError && /credentials|token/i.test(err.message)) {
+    console.error(err);
+    throw new SetupError("Vercel Blob credentials are missing. Reconnect the Blob store to this project, then redeploy.");
   }
   throw err;
 }

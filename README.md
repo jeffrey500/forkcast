@@ -72,7 +72,7 @@ Forkcast makes your household's food one shared plan:
 Forkcast is a single Next.js app that runs on Vercel's free tier. No database to set up: your household's data is a handful of JSON files in a private Vercel Blob store.
 
 1. **Fork this repo**, then import your fork at [vercel.com/new](https://vercel.com/new).
-2. In your Vercel project, open **Storage → Create → Blob**, choose **Private** access, and connect the store to the project. This sets `BLOB_READ_WRITE_TOKEN` automatically.
+2. In your Vercel project, open **Storage → Create → Blob**, choose **Private** access, and connect the store to the project. This sets `BLOB_READ_WRITE_TOKEN` or `BLOB_STORE_ID` automatically (either works).
 3. In **Settings → Environment Variables**, add these for **Production and Preview**:
 
    | Variable | Required | What it's for |
@@ -83,8 +83,10 @@ Forkcast is a single Next.js app that runs on Vercel's free tier. No database to
    | `ALLOW_SIGNUPS` | | Set to `false` once everyone has joined, to stop new sign-up requests. |
    | `IDEAS_DAILY_LIMIT` | | *Ask Claude* requests per person per day (default 20). |
 
-4. **Deploy**, open your site, and **create your account first**. The first account becomes the admin.
+4. **Redeploy** (environment changes only apply to new deployments), open your site, and **create your account first**. The first account becomes the admin.
 5. Share the link with your roommates and approve them under **Admin**.
+
+> **Seeing "Setup needed: …" when you sign up?** The message names the missing setting. Fix it in Vercel, then redeploy.
 
 > **Tip:** leave Vercel's **Git Fork Protection** on (it's on by default). Pull requests from other people's forks then can't run with your environment variables until you approve them.
 

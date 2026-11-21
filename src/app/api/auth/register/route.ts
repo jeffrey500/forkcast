@@ -5,10 +5,11 @@ import { body, handle, HttpError, newId, nowIso, publicUser, str } from "@/lib/s
 import { clientIp, rateLimit } from "@/lib/ratelimit";
 
 const MAX_PENDING = 10;
-import { signSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
+import { assertSessionSecret, signSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
 import type { User } from "@/lib/types";
 
 export const POST = handle(async (req: Request) => {
+  assertSessionSecret();
   rateLimit(`register:${clientIp(req)}`, 5, 60 * 60_000, "Too many sign-up attempts. Try again later.");
   const b = await body(req);
   const email = str(b.email, 200).toLowerCase();

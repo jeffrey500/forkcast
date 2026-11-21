@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { SetupError } from "./errors";
 
 /** Edge-safe JWT helpers (used by proxy.ts and the server). */
 
@@ -7,13 +8,20 @@ export const SESSION_DAYS = 30;
 
 function secret(): Uint8Array {
   const s = process.env.AUTH_SECRET;
-  if (!s) {
+  if (!s || (process.env.NODE_ENV === "production" && s.length < 32)) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("AUTH_SECRET environment variable is required in production.");
+      throw new SetupError(
+        "add an AUTH_SECRET environment variable in Vercel (at least 32 random characters, e.g. from `openssl rand -base64 32`), then redeploy.",
+      );
     }
     return new TextEncoder().encode("dev-only-insecure-secret-change-me-please-0123456789");
   }
   return new TextEncoder().encode(s);
+}
+
+/** Throws a SetupError if sessions can't be signed, before anything is saved. */
+export function assertSessionSecret() {
+  secret();
 }
 
 export async function signSession(userId: string): Promise<string> {
