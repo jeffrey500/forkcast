@@ -117,6 +117,10 @@ function SettingsForm() {
   const [agreementRule, setAgreementRule] = useState<AgreementRule>(s.agreementRule);
   const [staples, setStaples] = useState(s.staples.join(", "));
   const [claudeModel, setClaudeModel] = useState(s.claudeModel);
+  const [reminderEmails, setReminderEmails] = useState(s.reminderEmails);
+  const [timezone, setTimezone] = useState(s.timezone);
+  const [reminderResult, setReminderResult] = useState("");
+  const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [s.timezone];
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -131,6 +135,8 @@ function SettingsForm() {
       agreementRule,
       staples: staples.split(",").map((x) => x.trim()).filter(Boolean),
       claudeModel,
+      reminderEmails,
+      timezone,
       ...(apiKey ? { anthropicApiKey: apiKey } : {}),
     });
     setBusy(false);
@@ -220,6 +226,60 @@ function SettingsForm() {
               Remove saved key
             </button>
           )}
+        </div>
+        <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
+          <h3 className="font-bold">Daily vote reminders</h3>
+          <p className="mt-1 text-xs text-ink/60">
+            Every evening, each roommate gets at most one email covering: tomorrow having no agreed meal, next week still
+            being unplanned after planning day, and upcoming meals (next 14 days) they haven&apos;t agreed to yet.
+            Nobody is emailed when there&apos;s nothing to remind them about.
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderEmails} onChange={(e) => setReminderEmails(e.target.checked)} />
+              Send daily reminder emails
+            </label>
+            <div>
+              <label className="label">Household time zone</label>
+              <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+                {zones.map((z) => (
+                  <option key={z}>{z}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <ul className="mt-3 space-y-0.5 text-xs">
+            <li className={s.emailConfigured ? "text-leaf-700" : "text-amber-800"}>
+              {s.emailConfigured ? "✓ Email (SMTP) is set up." : "⚠ Email isn't set up yet: add SMTP_HOST, SMTP_USER and SMTP_PASS in Vercel (see README)."}
+            </li>
+            <li className={s.cronConfigured ? "text-leaf-700" : "text-amber-800"}>
+              {s.cronConfigured ? "✓ Daily job is set up (runs around 8–9 pm US Eastern)." : "⚠ Add CRON_SECRET in Vercel so the daily job can run."}
+            </li>
+          </ul>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={!s.emailConfigured}
+              onClick={async () => {
+                setReminderResult("Sending…");
+                const r = await api<{ skipped?: string; sent: { name: string; meals: number }[]; failed: { name: string }[] }>("POST", "/api/admin/reminders");
+                if (!r) return setReminderResult("");
+                setReminderResult(
+                  r.skipped ??
+                    (r.sent.length || r.failed.length
+                      ? [
+                          r.sent.length ? `Sent to ${r.sent.map((x) => `${x.name} (${x.meals})`).join(", ")}.` : "",
+                          r.failed.length ? `Failed for ${r.failed.map((x) => x.name).join(", ")}.` : "",
+                        ].join(" ")
+                      : "Nothing needs a reminder right now, so no emails were sent."),
+                );
+              }}
+            >
+              Send reminders now
+            </button>
+            {reminderResult && <span className="text-xs text-ink/70">{reminderResult}</span>}
+          </div>
         </div>
         <div className="flex justify-end md:col-span-2">
           <button className="btn-primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>

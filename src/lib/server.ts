@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { HttpError } from "./errors";
+import { LIBRARY } from "./library";
 import { read } from "./store";
 import { SESSION_COOKIE, verifySession } from "./session";
 import {
@@ -37,7 +38,12 @@ export function claudeKey(settings: Settings): { key: string; source: PublicSett
 export function publicSettings(s: Settings): PublicSettings {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { anthropicApiKey, ...rest } = s;
-  return { ...rest, claudeKeySource: claudeKey(s).source };
+  return {
+    ...rest,
+    claudeKeySource: claudeKey(s).source,
+    emailConfigured: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+    cronConfigured: Boolean(process.env.CRON_SECRET),
+  };
 }
 
 /** The signed-in user, whatever their approval status. */
@@ -91,15 +97,15 @@ export function handle<Args extends unknown[]>(
 const MAX_BODY_BYTES = 64 * 1024;
 
 /** Parse a JSON body. Rejects non-JSON content types (blocks form-based CSRF) and oversized bodies. */
-export async function body<T = Record<string, unknown>>(req: Request): Promise<T> {
+export async function body<T = Record<string, unknown>>(req: Request, maxBytes = MAX_BODY_BYTES): Promise<T> {
   if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     throw new HttpError(415, "Expected a JSON request.");
   }
-  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
+  if (Number(req.headers.get("content-length") ?? 0) > maxBytes) {
     throw new HttpError(413, "Request is too large.");
   }
   const text = await req.text();
-  if (text.length > MAX_BODY_BYTES) throw new HttpError(413, "Request is too large.");
+  if (text.length > maxBytes) throw new HttpError(413, "Request is too large.");
   try {
     return JSON.parse(text) as T;
   } catch {
@@ -132,7 +138,8 @@ export function cleanIngredients(v: unknown) {
       quantity: Math.max(0, num((i as Record<string, unknown>)?.quantity, 0)),
       unit: str((i as Record<string, unknown>)?.unit, 20),
     }))
-    .filter((i) => i.name);
+    .filter((i) => i.name)
+    .slice(0, 100);
 }
 
 export function cleanRecipe(b: Record<string, unknown>) {
@@ -145,5 +152,8 @@ export function cleanRecipe(b: Record<string, unknown>) {
     ingredients: cleanIngredients(b.ingredients),
     instructions: str(b.instructions, 10000),
     tags: Array.isArray(b.tags) ? b.tags.map((t) => str(t, 30)).filter(Boolean).slice(0, 12) : [],
+    ...(typeof b.libraryId === "string" && LIBRARY.some((r) => r.id === b.libraryId)
+      ? { libraryId: b.libraryId }
+      : {}),
   };
 }

@@ -5,6 +5,8 @@ import { useApp } from "@/components/AppProvider";
 import MealForm, { type MealFormInit } from "@/components/MealForm";
 import { EmptyState, IngredientList, Modal, RecipeForm } from "@/components/ui";
 import { useForecast } from "@/components/useForecast";
+import RecipeLibrary from "@/components/RecipeLibrary";
+import { LIBRARY } from "@/lib/library";
 import { consumeFromFridge } from "@/lib/inventory";
 import { formatAmount } from "@/lib/units";
 import type { Recipe } from "@/lib/types";
@@ -17,6 +19,7 @@ export default function RecipesPage() {
   const [editing, setEditing] = useState<Recipe | "new" | null>(null);
   const [viewing, setViewing] = useState<Recipe | null>(null);
   const [planning, setPlanning] = useState<MealFormInit | null>(null);
+  const [tab, setTab] = useState<"ours" | "library">(state.recipes.length ? "ours" : "library");
 
   const names = useMemo(() => {
     const s = new Set<string>();
@@ -66,6 +69,29 @@ export default function RecipesPage() {
         <button className="btn-primary" onClick={() => setEditing("new")}>+ New recipe</button>
       </div>
 
+      <div className="flex gap-1 border-b border-black/10" role="tablist">
+        {([
+          ["ours", `Our recipes (${state.recipes.length})`],
+          ["library", `Recipe library (${LIBRARY.length})`],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold ${tab === key ? "border-leaf-600 text-leaf-700" : "border-transparent text-ink/50 hover:text-ink"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "library" && (
+        <RecipeLibrary onPlan={(r) => setPlanning({ date: fc.today, slot: state.settings.mealSlots.at(-1) ?? "Dinner", recipeId: r.id })} />
+      )}
+
+      {tab === "ours" && (<>
+
       {state.recipes.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <input className="input max-w-xs" placeholder="Search by name or ingredient…" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -82,7 +108,8 @@ export default function RecipesPage() {
 
       {state.recipes.length === 0 ? (
         <EmptyState icon="📖" title="No recipes yet">
-          Add the meals you usually cook, or ask Claude for ideas and save the ones you like.
+          Add the meals you usually cook, pick some from the{" "}
+          <button className="font-semibold text-leaf-700 underline" onClick={() => setTab("library")}>recipe library</button>, or ask Claude for ideas.
         </EmptyState>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -114,6 +141,8 @@ export default function RecipesPage() {
           })}
         </div>
       )}
+
+      </>)}
 
       {viewing && !editing && (
         <Modal title={viewing.name} onClose={() => setViewing(null)} wide>

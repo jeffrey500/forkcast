@@ -34,6 +34,8 @@ export interface Recipe {
   ingredients: Ingredient[];
   instructions: string;
   tags: string[];
+  /** Set when copied from the built-in recipe library. */
+  libraryId?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -98,6 +100,10 @@ export interface Settings {
   claudeModel: string;
   /** Stored server-side only, never sent to the browser. */
   anthropicApiKey: string;
+  /** Email roommates each evening about upcoming meals they haven't agreed to. */
+  reminderEmails: boolean;
+  /** IANA time zone for "today"/"tomorrow" in reminders, e.g. America/New_York. */
+  timezone: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -109,10 +115,16 @@ export const DEFAULT_SETTINGS: Settings = {
   staples: ["salt", "pepper", "water"],
   claudeModel: "claude-opus-5-5",
   anthropicApiKey: "",
+  reminderEmails: true,
+  timezone: "America/New_York",
 };
 
 export type PublicSettings = Omit<Settings, "anthropicApiKey"> & {
   claudeKeySource: "env" | "settings" | "none";
+  /** Whether SMTP is configured so reminder emails can actually be sent. */
+  emailConfigured: boolean;
+  /** Whether the daily cron is protected by CRON_SECRET. */
+  cronConfigured: boolean;
 };
 
 export interface AppState {

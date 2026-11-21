@@ -1,17 +1,12 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { read, update } from "@/lib/store";
-import { rateLimit } from "@/lib/ratelimit";
-import { body, claudeKey, getSettings, handle, HttpError, num, requireMember, str } from "@/lib/server";
+import { read } from "@/lib/store";
+import { claudeError, claudeFor } from "@/lib/claude";
+import { body, handle, HttpError, num, requireMember, str } from "@/lib/server";
 import type { FridgeItem, Recipe } from "@/lib/types";
 
 export const maxDuration = 120;
 
-/** Per-person daily cap so a leaked login can't run up the Claude bill. */
-const DAILY_LIMIT = Math.max(1, parseInt(process.env.IDEAS_DAILY_LIMIT ?? "20", 10) || 20);
-
-type Usage = { day: string; counts: Record<string, number> };
 
 const IdeaSchema = z.object({
   ideas: z.array(
@@ -40,29 +35,13 @@ Do not repeat recipes the roommates already have.`;
 
 export const POST = handle(async (req: Request) => {
   const me = await requireMember();
-  rateLimit(`ideas:${me.id}`, 1, 5_000, "One request at a time — give Claude a few seconds.");
   const b = await body(req);
   const prompt = str(b.prompt, 2000);
   const useFridge = b.useFridge !== false;
   const count = Math.min(6, Math.max(1, Math.round(num(b.count, 3))));
   const servings = Math.min(12, Math.max(1, Math.round(num(b.servings, 3))));
 
-  const settings = await getSettings();
-  const { key } = claudeKey(settings);
-  if (!key) {
-    throw new HttpError(400, "No Claude API key yet. An admin can add one under Admin → Settings.");
-  }
-
-  // Count this request against today's allowance (UTC day) before spending anything.
-  const today = new Date().toISOString().slice(0, 10);
-  await update<Usage>("usage", { day: today, counts: {} }, (u) => {
-    const usage = u.day === today ? u : { day: today, counts: {} };
-    const used = usage.counts[me.id] ?? 0;
-    if (used >= DAILY_LIMIT) {
-      throw new HttpError(429, `You've used today's ${DAILY_LIMIT} Claude requests. More tomorrow!`);
-    }
-    return { data: { day: today, counts: { ...usage.counts, [me.id]: used + 1 } } };
-  });
+  const { client, settings } = await claudeFor(me);
 
   const [fridge, recipes] = await Promise.all([
     read<FridgeItem[]>("fridge", []),
@@ -84,7 +63,6 @@ export const POST = handle(async (req: Request) => {
     .filter(Boolean)
     .join("\n\n");
 
-  const client = new Anthropic({ apiKey: key });
   try {
     const response = await client.beta.messages.parse({
       model: settings.claudeModel || "claude-opus-5-5",
@@ -104,16 +82,6 @@ export const POST = handle(async (req: Request) => {
     }
     return response.parsed_output;
   } catch (err) {
-    if (err instanceof HttpError) throw err;
-    if (err instanceof Anthropic.AuthenticationError) {
-      throw new HttpError(400, "The Claude API key was rejected. Check it in Admin → Settings.");
-    }
-    if (err instanceof Anthropic.RateLimitError) {
-      throw new HttpError(429, "Claude is rate-limited right now. Try again in a minute.");
-    }
-    if (err instanceof Anthropic.APIError) {
-      throw new HttpError(502, `Claude API error: ${err.message}`);
-    }
-    throw err;
+    claudeError(err);
   }
 });

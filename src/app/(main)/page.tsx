@@ -9,7 +9,7 @@ import { IngredientList } from "@/components/ui";
 import { addDays, DAY_NAMES, dayName, fromISODate, shortDate, weekDays, weekLabel, weekStart } from "@/lib/dates";
 import { formatAmount, roundUpQty } from "@/lib/units";
 import type { Meal } from "@/lib/types";
-import type { MealForecast } from "@/lib/inventory";
+import { repeatCandidates, type MealForecast } from "@/lib/inventory";
 
 export default function WeekPage() {
   const { state, api, toast } = useApp();
@@ -43,6 +43,20 @@ export default function WeekPage() {
     if (await api("PUT", `/api/meals/${id}`, { date, slot })) toast(`Moved to ${dayName(date)} ${slot.toLowerCase()}.`);
   }
 
+  /** Copy last week's meals into the empty slots of `target`. */
+  async function repeatLastWeek(target: string) {
+    const n = repeatCandidates(state.meals, target, addDays).length;
+    if (!n) return toast("Every slot that had a meal last week is already filled.");
+    if (!confirm(`Fill ${n} empty slot${n === 1 ? "" : "s"} in ${weekLabel(target)} with last week's meals?\n\nThey'll be proposed by you, so everyone else still gets to agree.`)) return;
+    const r = await api<{ added: number }>("POST", "/api/meals/repeat", { weekStart: target });
+    if (r) {
+      setStart(target);
+      toast(`Copied ${r.added} meal${r.added === 1 ? "" : "s"} from last week.`);
+    }
+  }
+  const canRepeat = repeatCandidates(state.meals, start, addDays).length;
+  const canRepeatNext = repeatCandidates(state.meals, nextWeek, addDays).length;
+
   async function addShortfallsToList() {
     const items = weekShortfalls.map((s) => ({ name: s.name, quantity: roundUpQty(s.quantity), unit: s.unit }));
     if (await api("POST", "/api/shopping", { items, plannedDate: shopDate })) {
@@ -62,9 +76,16 @@ export default function WeekPage() {
               {nextWeekMeals ? `${nextWeekMeals} meal(s) proposed so far.` : "Nothing proposed yet."}
             </p>
           </div>
-          <button className="btn bg-white text-leaf-700 hover:bg-white/90" onClick={() => setStart(nextWeek)}>
-            Plan next week →
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {canRepeatNext > 0 && (
+              <button className="btn border border-white/40 text-white hover:bg-white/10" onClick={() => repeatLastWeek(nextWeek)}>
+                ↻ Repeat this week
+              </button>
+            )}
+            <button className="btn bg-white text-leaf-700 hover:bg-white/90" onClick={() => setStart(nextWeek)}>
+              Plan next week →
+            </button>
+          </div>
         </div>
       )}
 
@@ -75,7 +96,16 @@ export default function WeekPage() {
           </p>
           <h1 className="text-2xl font-extrabold">{weekLabel(start)}</h1>
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
+          {canRepeat > 0 && (
+            <button
+              className="btn-outline"
+              onClick={() => repeatLastWeek(start)}
+              title="Copy last week's meals into this week's empty slots"
+            >
+              ↻ Repeat last week ({canRepeat})
+            </button>
+          )}
           <button className="btn-outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">←</button>
           <button className="btn-outline" onClick={() => setStart(thisWeek)} disabled={start === thisWeek}>Today</button>
           <button className="btn-outline" onClick={() => setStart(addDays(start, 7))} aria-label="Next week">→</button>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { useForecast } from "@/components/useForecast";
 import { EmptyState, UnitInput } from "@/components/ui";
+import ReceiptScanner from "@/components/ReceiptScanner";
 import { addDays, dayName, shortDate } from "@/lib/dates";
 import { mealIngredients, type Shortfall } from "@/lib/inventory";
 import { convert, formatAmount, normalizeName, roundUpQty } from "@/lib/units";
@@ -12,6 +13,7 @@ import type { FridgeItem, ShoppingItem } from "@/lib/types";
 export default function FridgePage() {
   const { state, api, toast, userName } = useApp();
   const fc = useForecast();
+  const [scanning, setScanning] = useState(false);
 
   const ingredientNames = useMemo(() => {
     const s = new Set<string>();
@@ -43,12 +45,16 @@ export default function FridgePage() {
           <option key={n} value={n} />
         ))}
       </datalist>
-      <div>
-        <h1 className="text-2xl font-extrabold">Fridge &amp; shopping</h1>
-        <p className="text-sm text-ink/60">
-          Cooking a meal takes its ingredients out automatically. Use this page for groceries, leftovers and corrections.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold">Fridge &amp; shopping</h1>
+          <p className="text-sm text-ink/60">
+            Cooking a meal takes its ingredients out automatically. Use this page for groceries, leftovers and corrections.
+          </p>
+        </div>
+        <button className="btn-primary" onClick={() => setScanning(true)}>🧾 Scan a receipt</button>
       </div>
+      {scanning && <ReceiptScanner onClose={() => setScanning(false)} />}
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <section className="space-y-3">

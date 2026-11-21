@@ -258,3 +258,26 @@ export function requiredAgreements(rule: Settings["agreementRule"], members: num
   if (rule === "all") return members;
   return Math.floor(members / 2) + 1;
 }
+
+/**
+ * Meals from the week before `targetStart` that can be copied into the target
+ * week: same weekday and slot, only where that slot is still empty, skipping
+ * meals that were skipped last time.
+ */
+export function repeatCandidates(meals: Meal[], targetStart: string, addDays: (iso: string, n: number) => string) {
+  const prevStart = addDays(targetStart, -7);
+  const prevEnd = addDays(targetStart, -1);
+  const filled = new Set(
+    meals
+      .filter((m) => m.date >= targetStart && m.date <= addDays(targetStart, 6))
+      .map((m) => `${m.date}|${m.slot}`),
+  );
+  const out: { from: Meal; date: string }[] = [];
+  for (const m of meals) {
+    if (m.date < prevStart || m.date > prevEnd || m.status === "skipped") continue;
+    const date = addDays(m.date, 7);
+    if (filled.has(`${date}|${m.slot}`)) continue;
+    out.push({ from: m, date });
+  }
+  return out;
+}

@@ -27,6 +27,15 @@ export const PUT = handle(async (req: Request) => {
       s.staples = [...new Set(b.staples.map((x) => str(x, 60)).filter(Boolean))].slice(0, 50);
     }
     if (typeof b.claudeModel === "string" && MODELS.includes(b.claudeModel)) s.claudeModel = b.claudeModel;
+    if (typeof b.reminderEmails === "boolean") s.reminderEmails = b.reminderEmails;
+    if (typeof b.timezone === "string") {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: b.timezone });
+        s.timezone = b.timezone;
+      } catch {
+        // ignore unknown time zones
+      }
+    }
     // Empty string clears the key; undefined leaves it alone.
     if (typeof b.anthropicApiKey === "string") s.anthropicApiKey = b.anthropicApiKey.trim();
     return { data: s };

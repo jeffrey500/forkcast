@@ -21,7 +21,8 @@ export type Collection =
   | "fridge"
   | "meals"
   | "shopping"
-  | "usage";
+  | "usage"
+  | "reminders";
 
 // Connecting a Blob store in Vercel sets BLOB_READ_WRITE_TOKEN, or BLOB_STORE_ID
 // (credentials then come from Vercel's built-in OIDC token). Either works.
