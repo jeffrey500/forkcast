@@ -83,12 +83,14 @@ export function handle<Args extends unknown[]>(
         if (err.status >= 500) console.error(err.message);
         return NextResponse.json({ error: err.message }, { status: err.status });
       }
-      console.error(err);
+      // A short reference ties what the user sees to the full error in Vercel → Logs.
+      const ref = Math.random().toString(36).slice(2, 8).toUpperCase();
+      console.error(`[error ${ref}]`, err);
       // Don't leak internals (storage paths, stack details) to the browser in production.
       const msg =
         process.env.NODE_ENV !== "production" && err instanceof Error
           ? err.message
-          : "Something went wrong on the server. Try again in a moment.";
+          : `Something went wrong on the server (ref ${ref}). Try again, or search Vercel → Logs for ${ref}.`;
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   };

@@ -1,6 +1,6 @@
 import "server-only";
 import { read, update } from "./store";
-import { appUrl, emailConfigured, sendEmail } from "./email";
+import { appUrl, emailConfigured, sendEmail, smtpProblem } from "./email";
 import { SetupError } from "./errors";
 import { getSettings } from "./server";
 import { addDays, DAY_NAMES, dayName, shortDate, weekDays, weekLabel, weekStart } from "./dates";
@@ -149,7 +149,7 @@ ${sections
     } catch (err) {
       if (err instanceof SetupError) throw err;
       console.error("Reminder email failed for", u.id, err);
-      result.failed.push({ name: u.name, error: "could not send" });
+      result.failed.push({ name: u.name, error: smtpProblem(err) });
     }
   }
   return result;

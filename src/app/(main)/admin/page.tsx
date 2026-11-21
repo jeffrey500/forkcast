@@ -262,15 +262,31 @@ function SettingsForm() {
               className="btn-outline btn-sm"
               disabled={!s.emailConfigured}
               onClick={async () => {
+                setReminderResult("Checking the email login and sending you a test…");
+                const r = await api<{ message: string }>("POST", "/api/admin/reminders", { test: true });
+                setReminderResult(r ? r.message : "");
+              }}
+            >
+              Send test email to me
+            </button>
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={!s.emailConfigured}
+              onClick={async () => {
                 setReminderResult("Sending…");
-                const r = await api<{ skipped?: string; sent: { name: string; meals: number }[]; failed: { name: string }[] }>("POST", "/api/admin/reminders");
+                const r = await api<{ skipped?: string; sent: { name: string; meals: number }[]; failed: { name: string; error: string }[] }>(
+                  "POST",
+                  "/api/admin/reminders",
+                  {},
+                );
                 if (!r) return setReminderResult("");
                 setReminderResult(
                   r.skipped ??
                     (r.sent.length || r.failed.length
                       ? [
                           r.sent.length ? `Sent to ${r.sent.map((x) => `${x.name} (${x.meals})`).join(", ")}.` : "",
-                          r.failed.length ? `Failed for ${r.failed.map((x) => x.name).join(", ")}.` : "",
+                          r.failed.length ? `Failed for ${r.failed.map((x) => x.name).join(", ")}: ${r.failed[0].error}` : "",
                         ].join(" ")
                       : "Nothing needs a reminder right now, so no emails were sent."),
                 );
