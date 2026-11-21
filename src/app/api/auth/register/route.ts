@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { update } from "@/lib/store";
 import { body, handle, HttpError, newId, nowIso, publicUser, str } from "@/lib/server";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
+
+const MAX_PENDING = 10;
 import { signSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
 import type { User } from "@/lib/types";
 
 export const POST = handle(async (req: Request) => {
+  rateLimit(`register:${clientIp(req)}`, 5, 60 * 60_000, "Too many sign-up attempts. Try again later.");
   const b = await body(req);
   const email = str(b.email, 200).toLowerCase();
   const name = str(b.name, 60);
@@ -26,6 +30,14 @@ export const POST = handle(async (req: Request) => {
     }
     // The very first account (or anyone listed in ADMIN_EMAILS) is an approved admin.
     const bootstrap = users.length === 0 || adminEmails.includes(email);
+    // Once everyone has joined, set ALLOW_SIGNUPS=false so strangers can't even ask.
+    if (!bootstrap && process.env.ALLOW_SIGNUPS === "false") {
+      throw new HttpError(403, "Sign-ups are closed. Ask your household admin.");
+    }
+    // Stop a flood of junk sign-ups from piling up (an admin can clear them).
+    if (!bootstrap && users.filter((u) => u.status === "pending").length >= MAX_PENDING) {
+      throw new HttpError(429, "Too many accounts are waiting for approval. Ask your admin to review them.");
+    }
     const u: User = {
       id: newId(),
       email,

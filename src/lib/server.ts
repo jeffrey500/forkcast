@@ -25,7 +25,7 @@ export const nowIso = () => new Date().toISOString();
 
 export function publicUser(u: User): PublicUser {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { passwordHash, ...rest } = u;
+  const { passwordHash, failedLogins, lockedUntil, ...rest } = u;
   return rest;
 }
 
@@ -83,15 +83,30 @@ export function handle<Args extends unknown[]>(
         return NextResponse.json({ error: err.message }, { status: err.status });
       }
       console.error(err);
-      const msg = err instanceof Error ? err.message : "Something went wrong";
+      // Don't leak internals (storage paths, stack details) to the browser in production.
+      const msg =
+        process.env.NODE_ENV !== "production" && err instanceof Error
+          ? err.message
+          : "Something went wrong on the server. Try again in a moment.";
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   };
 }
 
+const MAX_BODY_BYTES = 64 * 1024;
+
+/** Parse a JSON body. Rejects non-JSON content types (blocks form-based CSRF) and oversized bodies. */
 export async function body<T = Record<string, unknown>>(req: Request): Promise<T> {
+  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    throw new HttpError(415, "Expected a JSON request.");
+  }
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
+    throw new HttpError(413, "Request is too large.");
+  }
+  const text = await req.text();
+  if (text.length > MAX_BODY_BYTES) throw new HttpError(413, "Request is too large.");
   try {
-    return (await req.json()) as T;
+    return JSON.parse(text) as T;
   } catch {
     throw new HttpError(400, "Invalid JSON body.");
   }

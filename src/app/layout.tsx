@@ -11,6 +11,7 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: APP_NAME,
   description: "Plan the week's meals with your roommates and keep the fridge in check.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

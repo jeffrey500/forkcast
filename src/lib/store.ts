@@ -1,7 +1,7 @@
 import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
-import { get, put, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, put, BlobAccessError, BlobPreconditionFailedError } from "@vercel/blob";
 
 /**
  * JSON-file storage.
@@ -19,7 +19,8 @@ export type Collection =
   | "recipes"
   | "fridge"
   | "meals"
-  | "shopping";
+  | "shopping"
+  | "usage";
 
 const blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 const blobPath = (name: Collection) => `data/${name}.json`;
@@ -34,6 +35,17 @@ function assertWritableEnv() {
   }
 }
 
+/** Household data must never sit in a public store; say so clearly if it would. */
+function explainBlobError(err: unknown): never {
+  if (err instanceof BlobAccessError || (err instanceof Error && /public|private|access/i.test(err.message))) {
+    console.error(
+      "Vercel Blob refused private access. Create the Blob store with *Private* access so household data is never publicly readable.",
+      err,
+    );
+  }
+  throw err;
+}
+
 interface Snapshot<T> {
   data: T;
   etag: string | null;
@@ -42,7 +54,7 @@ interface Snapshot<T> {
 async function readRaw<T>(name: Collection, fallback: T): Promise<Snapshot<T>> {
   assertWritableEnv();
   if (blobEnabled()) {
-    const res = await get(blobPath(name), { access: "private", useCache: false });
+    const res = await get(blobPath(name), { access: "private", useCache: false }).catch(explainBlobError);
     if (!res || res.statusCode !== 200) return { data: fallback, etag: null };
     const text = await new Response(res.stream).text();
     return { data: JSON.parse(text) as T, etag: res.blob.etag };
@@ -92,7 +104,7 @@ export async function update<T, R = void>(
           err instanceof BlobPreconditionFailedError ||
           // creating a file that someone else just created
           (!snap.etag && err instanceof Error && /already exists/i.test(err.message));
-        if (!conflict) throw err;
+        if (!conflict) explainBlobError(err);
         await new Promise((r) => setTimeout(r, 50 + Math.random() * 150));
       }
     }

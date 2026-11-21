@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 56 56">
+  <style>
+    .ink { fill: #1d5a37; } .line { stroke: #1d5a37; } .sun { fill: #eeb32b; }
+    @media (prefers-color-scheme: dark) { .ink { fill: #f4efe2; } .line { stroke: #f4efe2; } }
+  </style>
+  <defs>
+    <!-- leaves a small gap around the fork so it reads cleanly over the sun and horizon -->
+    <mask id="cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <path id="fork" stroke="#000" stroke-width="4" stroke-linejoin="round"
+            d="M23 12a2 2 0 0 1 4 0v12h3V12a2 2 0 0 1 4 0v12h3V12a2 2 0 0 1 4 0v14c0 4-2.8 6.9-6.5 8v20a2.5 2.5 0 0 1-5 0V34c-3.7-1.1-6.5-4-6.5-8z"/>
+    </mask>
+  </defs>
+  <g mask="url(#cut)">
+    <path class="sun" d="M10 46a22 22 0 0 1 44 0z"/>
+    <path class="line" d="M5.5 46h53" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <path class="ink" d="M23 12a2 2 0 0 1 4 0v12h3V12a2 2 0 0 1 4 0v12h3V12a2 2 0 0 1 4 0v14c0 4-2.8 6.9-6.5 8v20a2.5 2.5 0 0 1-5 0V34c-3.7-1.1-6.5-4-6.5-8z"/>
+</svg>
