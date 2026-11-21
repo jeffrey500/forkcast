@@ -5,6 +5,7 @@ import { HttpError } from "./errors";
 import { LIBRARY } from "./library";
 import { discordWebhook } from "./discord";
 import { read } from "./store";
+import { titleCase } from "./units";
 import { SESSION_COOKIE, verifySession } from "./session";
 import {
   DEFAULT_SETTINGS,
@@ -138,7 +139,7 @@ export function cleanIngredients(v: unknown) {
   if (!Array.isArray(v)) return [];
   return v
     .map((i) => ({
-      name: str((i as Record<string, unknown>)?.name, 100),
+      name: titleCase(str((i as Record<string, unknown>)?.name, 100)),
       quantity: Math.max(0, num((i as Record<string, unknown>)?.quantity, 0)),
       unit: str((i as Record<string, unknown>)?.unit, 20),
     }))

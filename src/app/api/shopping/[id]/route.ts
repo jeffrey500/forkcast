@@ -1,6 +1,7 @@
 import { update } from "@/lib/store";
 import { addToFridge } from "@/lib/inventory";
 import { body, handle, HttpError, isoDate, newId, num, requireMember, str } from "@/lib/server";
+import { titleCase } from "@/lib/units";
 import type { FridgeItem, ShoppingItem } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -14,7 +15,7 @@ export const PUT = handle(async (req: Request, ctx: Ctx) => {
     if (!cur) throw new HttpError(404, "Item not found.");
     const next: ShoppingItem = {
       ...cur,
-      name: str(b.name, 100) || cur.name,
+      name: titleCase(str(b.name, 100)) || cur.name,
       quantity: b.quantity !== undefined ? Math.max(0, num(b.quantity, cur.quantity)) : cur.quantity,
       unit: typeof b.unit === "string" ? str(b.unit, 20) : cur.unit,
       plannedDate: b.plannedDate === null ? null : b.plannedDate ? isoDate(b.plannedDate) : cur.plannedDate,

@@ -1,6 +1,8 @@
 import { read, update } from "@/lib/store";
-import { body, handle, HttpError, isoDate, newId, nowIso, num, requireMember, str } from "@/lib/server";
-import type { Meal, Recipe } from "@/lib/types";
+import { assignChores } from "@/lib/chores";
+import { weekStart } from "@/lib/dates";
+import { body, getSettings, handle, HttpError, isoDate, newId, nowIso, num, requireMember, str } from "@/lib/server";
+import type { Meal, Recipe, User } from "@/lib/types";
 
 export const POST = handle(async (req: Request) => {
   const me = await requireMember();
@@ -18,6 +20,9 @@ export const POST = handle(async (req: Request) => {
     if (!num(b.servings, 0)) servings = recipe.servings;
   }
   if (!title) throw new HttpError(400, "Pick a recipe or type what you're eating.");
+  const [settings, users] = await Promise.all([getSettings(), read<User[]>("users", [])]);
+  const memberIds = users.filter((u) => u.status === "approved").map((u) => u.id);
+  const dishesId = str(b.dishesId, 60);
 
   const meal: Meal = {
     id: newId(),
@@ -30,9 +35,23 @@ export const POST = handle(async (req: Request) => {
     proposedBy: me.id,
     agreedBy: [me.id], // proposing counts as agreeing
     cookId: str(b.cookId, 60) || null,
+    dishesId: memberIds.includes(dishesId) ? dishesId : null,
     notes: str(b.notes, 500),
     createdAt: nowIso(),
   };
-  await update<Meal[]>("meals", [], (ms) => ({ data: [...ms, meal] }));
-  return { meal };
+  const auto = settings.cookAssignment !== "manual" || settings.dishesAssignment !== "manual";
+  const saved = await update<Meal[], Meal>("meals", [], (ms) => {
+    let data = [...ms, meal];
+    if (auto) {
+      data = assignChores({
+        allMeals: data,
+        targetIds: [meal.id],
+        memberIds,
+        rules: settings,
+        weekAnchor: weekStart(date, settings.weekStartDay),
+      }).meals;
+    }
+    return { data, result: data.find((m) => m.id === meal.id) ?? meal };
+  });
+  return { meal: saved };
 });

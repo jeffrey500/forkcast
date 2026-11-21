@@ -33,7 +33,8 @@ Forkcast makes your household's food one shared plan:
 
 | | |
 |---|---|
-| 📅 **Flexible week planner** | Lunch, dinner, or any slots you like. Drag meals between days, skip them, or say who's cooking. Liked last week? **Repeat last week** fills just the empty slots. |
+| 📅 **Flexible week planner** | Lunch, dinner, or any slots you like. Drag meals between days, skip or remove them. Liked last week? **Repeat last week** fills just the empty slots. |
+| 🧽 **Who cooks, who cleans** | Every meal can have a cook and a dishwasher. Pick them yourselves, or let Forkcast rotate them fairly (dishes can be "never the cook"). A weekly tally keeps it honest, and the evening reminder says who's on duty tomorrow. |
 | 🗳️ **Planning day** | Pick a day (Friday by default) and everyone gets a reminder to plan the week ahead. |
 | 🧊 **Live fridge** | Quantities with real units: 500 g covers "0.4 kg", and 1 l covers "2 cups". |
 | 🛒 **Smart shopping list** | One click turns everything you're missing into a dated shopping list. **Bought** moves it into the fridge. |

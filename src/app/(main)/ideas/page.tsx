@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useApp } from "@/components/AppProvider";
-import { formatAmount } from "@/lib/units";
+import { formatAmount, titleCase } from "@/lib/units";
 import type { Ingredient } from "@/lib/types";
 
 interface Idea {
@@ -144,16 +144,16 @@ export default function IdeasPage() {
               ))}
             </div>
             {idea.usesFromFridge.length > 0 && (
-              <p className="mt-3 text-xs text-sky-700"><b>From the fridge:</b> {idea.usesFromFridge.join(", ")}</p>
+              <p className="mt-3 text-xs text-sky-700"><b>From the fridge:</b> {idea.usesFromFridge.map(titleCase).join(", ")}</p>
             )}
             {idea.needToBuy.length > 0 && (
-              <p className="mt-1 text-xs text-red-700"><b>Need to buy:</b> {idea.needToBuy.join(", ")}</p>
+              <p className="mt-1 text-xs text-red-700"><b>Need to buy:</b> {idea.needToBuy.map(titleCase).join(", ")}</p>
             )}
             <details className="mt-3 text-sm">
               <summary className="cursor-pointer font-semibold text-ink/70">Ingredients &amp; steps (serves {idea.servings})</summary>
               <ul className="mt-2 space-y-0.5">
                 {idea.ingredients.map((i, idx) => (
-                  <li key={idx}><b>{formatAmount(i.quantity, i.unit)}</b> {i.name}</li>
+                  <li key={idx}><b>{formatAmount(i.quantity, i.unit)}</b> {titleCase(i.name)}</li>
                 ))}
               </ul>
               <p className="mt-2 whitespace-pre-wrap text-ink/80">{idea.instructions}</p>

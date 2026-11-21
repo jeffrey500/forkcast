@@ -8,7 +8,7 @@ import { useForecast } from "@/components/useForecast";
 import RecipeLibrary from "@/components/RecipeLibrary";
 import { LIBRARY } from "@/lib/library";
 import { consumeFromFridge } from "@/lib/inventory";
-import { formatAmount } from "@/lib/units";
+import { formatAmount, normalizeName, titleCase } from "@/lib/units";
 import type { Recipe } from "@/lib/types";
 
 export default function RecipesPage() {
@@ -22,10 +22,15 @@ export default function RecipesPage() {
   const [tab, setTab] = useState<"ours" | "library">(state.recipes.length ? "ours" : "library");
 
   const names = useMemo(() => {
-    const s = new Set<string>();
-    state.recipes.forEach((r) => r.ingredients.forEach((i) => s.add(i.name)));
-    state.fridge.forEach((f) => s.add(f.name));
-    return [...s].sort();
+    // One entry per item regardless of case/plural ("eggs", "Egg" → "Egg").
+    const byKey = new Map<string, string>();
+    const add = (n: string) => {
+      const key = normalizeName(n);
+      if (key && !byKey.has(key)) byKey.set(key, titleCase(n));
+    };
+    state.recipes.forEach((r) => r.ingredients.forEach((i) => add(i.name)));
+    state.fridge.forEach((f) => add(f.name));
+    return [...byKey.values()].sort((a, b) => a.localeCompare(b));
   }, [state.recipes, state.fridge]);
 
   const tags = [...new Set(state.recipes.flatMap((r) => r.tags))].sort();
@@ -154,7 +159,7 @@ export default function RecipesPage() {
           <ul className="space-y-0.5 text-sm">
             {viewing.ingredients.map((i, idx) => (
               <li key={idx}>
-                <b>{formatAmount(i.quantity, i.unit)}</b> {i.name}
+                <b>{formatAmount(i.quantity, i.unit)}</b> {titleCase(i.name)}
               </li>
             ))}
           </ul>

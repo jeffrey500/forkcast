@@ -15,7 +15,7 @@ export interface MealFormInit {
 
 /** Add or edit a meal on the plan. */
 export default function MealForm({ init, onClose }: { init: MealFormInit; onClose: () => void }) {
-  const { state, api } = useApp();
+  const { state, api, toast } = useApp();
   const { meal } = init;
   const [mode, setMode] = useState<"recipe" | "free">(meal && !meal.recipeId ? "free" : "recipe");
   const [recipeId, setRecipeId] = useState(meal?.recipeId ?? init.recipeId ?? "");
@@ -25,6 +25,7 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
   const [slot, setSlot] = useState(meal?.slot ?? init.slot);
   const [servings, setServings] = useState<number | "">(meal?.servings ?? "");
   const [cookId, setCookId] = useState(meal?.cookId ?? "");
+  const [dishesId, setDishesId] = useState(meal?.dishesId ?? "");
   const [notes, setNotes] = useState(meal?.notes ?? "");
   const [busy, setBusy] = useState(false);
 
@@ -48,11 +49,23 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
       title: mode === "free" ? title : undefined,
       servings: servings === "" ? (selected?.servings ?? 1) : servings,
       cookId,
+      dishesId,
       notes,
     };
     const ok = meal ? await api("PUT", `/api/meals/${meal.id}`, payload) : await api("POST", "/api/meals", payload);
     setBusy(false);
     if (ok) onClose();
+  }
+
+  async function remove() {
+    if (!meal || !confirm(`Remove “${meal.title}” from ${dayName(meal.date)} ${meal.slot.toLowerCase()}?`)) return;
+    setBusy(true);
+    const ok = await api("DELETE", `/api/meals/${meal.id}`);
+    setBusy(false);
+    if (ok) {
+      toast("Removed from the plan.");
+      onClose();
+    }
   }
 
   return (
@@ -139,6 +152,21 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
+            {state.settings.cookAssignment === "rotate" && !cookId && (
+              <p className="mt-1 text-xs text-ink/50">Leave as Not decided to rotate automatically.</p>
+            )}
+          </div>
+          <div>
+            <label className="label">Who&apos;s doing dishes</label>
+            <select className="input" value={dishesId} onChange={(e) => setDishesId(e.target.value)}>
+              <option value="">Not decided</option>
+              {state.users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+            {state.settings.dishesAssignment !== "manual" && !dishesId && (
+              <p className="mt-1 text-xs text-ink/50">Leave as Not decided to rotate automatically.</p>
+            )}
           </div>
         </div>
         <div>
@@ -149,7 +177,10 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Changing the dish resets everyone&apos;s agreement.</p>
         )}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
+            {meal && meal.status !== "cooked" && (
+              <button type="button" className="btn-danger btn-sm" disabled={busy} onClick={remove}>Remove from plan</button>
+            )}
             <button type="button" className="btn-ghost btn-sm" onClick={() => setDate(addDays(date, -1))}>← Day</button>
             <button type="button" className="btn-ghost btn-sm" onClick={() => setDate(addDays(date, 1))}>Day →</button>
           </div>

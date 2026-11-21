@@ -69,6 +69,8 @@ export interface Meal {
   proposedBy: string;
   agreedBy: string[];
   cookId: string | null;
+  /** Who washes up. Missing on meals created before chores existed. */
+  dishesId?: string | null;
   notes: string;
   createdAt: string;
   cookedAt?: string;
@@ -112,7 +114,14 @@ export interface Settings {
   discordWebhookUrl: string;
   /** IANA time zone for "today"/"tomorrow" in reminders, e.g. America/New_York. */
   timezone: string;
+  /** "rotate": new meals get a cook automatically, spread fairly across the week. */
+  cookAssignment: CookAssignment;
+  /** "rotate": fair rotation; "not-cook": fair rotation, never the meal's cook. */
+  dishesAssignment: DishesAssignment;
 }
+
+export type CookAssignment = "manual" | "rotate";
+export type DishesAssignment = "manual" | "rotate" | "not-cook";
 
 export const DEFAULT_SETTINGS: Settings = {
   householdName: "Our place",
@@ -127,6 +136,8 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderDiscord: false,
   discordWebhookUrl: "",
   timezone: "America/New_York",
+  cookAssignment: "manual",
+  dishesAssignment: "manual",
 };
 
 export type PublicSettings = Omit<Settings, "anthropicApiKey" | "discordWebhookUrl"> & {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Ingredient, Recipe } from "@/lib/types";
-import { formatAmount } from "@/lib/units";
+import { formatAmount, titleCase } from "@/lib/units";
 
 export function Modal({
   title,
@@ -44,7 +44,7 @@ export function IngredientList({ items, className = "" }: { items: Ingredient[];
       {items.map((i, idx) => (
         <span key={idx}>
           {idx > 0 && ", "}
-          {formatAmount(i.quantity, i.unit)} {i.name}
+          {formatAmount(i.quantity, i.unit)} {titleCase(i.name)}
         </span>
       ))}
     </span>

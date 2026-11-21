@@ -1,5 +1,5 @@
 import type { FridgeItem, Ingredient, Meal, Recipe, Settings, ShoppingItem } from "./types";
-import { convert, normalizeName, unitFamily } from "./units";
+import { convert, normalizeName, titleCase, unitFamily } from "./units";
 
 /** Ingredients a meal needs, scaled from the recipe's servings to the meal's. */
 export function mealIngredients(meal: Meal, recipes: Map<string, Recipe> | Recipe[]): Ingredient[] {
@@ -241,7 +241,7 @@ export function addToFridge(
     } else {
       next.push({
         id: newId(),
-        name: it.name.trim(),
+        name: titleCase(it.name),
         quantity: it.quantity,
         unit: it.unit.trim(),
         updatedAt: now,

@@ -1,5 +1,6 @@
 import { update } from "@/lib/store";
 import { body, handle, HttpError, nowIso, num, requireMember, str } from "@/lib/server";
+import { titleCase } from "@/lib/units";
 import type { FridgeItem } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -14,7 +15,7 @@ export const PUT = handle(async (req: Request, ctx: Ctx) => {
     const quantity = Math.max(0, num(b.quantity, cur.quantity));
     const next: FridgeItem = {
       ...cur,
-      name: str(b.name, 100) || cur.name,
+      name: titleCase(str(b.name, 100)) || cur.name,
       unit: typeof b.unit === "string" ? str(b.unit, 20) : cur.unit,
       quantity,
       updatedAt: nowIso(),

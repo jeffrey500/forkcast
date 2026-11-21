@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DAY_NAMES } from "@/lib/dates";
 import { APP_VERSION } from "@/lib/version";
-import type { AgreementRule, PublicUser } from "@/lib/types";
+import type { AgreementRule, CookAssignment, DishesAssignment, PublicUser } from "@/lib/types";
 
 export default function AdminPage() {
   const { state } = useApp();
@@ -120,6 +120,8 @@ function SettingsForm() {
   const [agreementRule, setAgreementRule] = useState<AgreementRule>(s.agreementRule);
   const [staples, setStaples] = useState(s.staples.join(", "));
   const [claudeModel, setClaudeModel] = useState(s.claudeModel);
+  const [cookAssignment, setCookAssignment] = useState<CookAssignment>(s.cookAssignment ?? "manual");
+  const [dishesAssignment, setDishesAssignment] = useState<DishesAssignment>(s.dishesAssignment ?? "manual");
   const [reminderEmails, setReminderEmails] = useState(s.reminderEmails);
   const [reminderDiscord, setReminderDiscord] = useState(s.reminderDiscord);
   const [discordUrl, setDiscordUrl] = useState("");
@@ -140,6 +142,8 @@ function SettingsForm() {
       agreementRule,
       staples: staples.split(",").map((x) => x.trim()).filter(Boolean),
       claudeModel,
+      cookAssignment,
+      dishesAssignment,
       reminderEmails,
       reminderDiscord,
       ...(discordUrl ? { discordWebhookUrl: discordUrl } : {}),
@@ -234,6 +238,30 @@ function SettingsForm() {
               Remove saved key
             </button>
           )}
+        </div>
+        <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
+          <h3 className="font-bold">Chores</h3>
+          <p className="mt-1 text-xs text-ink/60">
+            Automatic picks only fill meals where nobody was chosen, and spread the work evenly within each week. The planner&apos;s
+            🧽 Assign chores button fills a whole week at once.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Who cooks</label>
+              <select className="input" value={cookAssignment} onChange={(e) => setCookAssignment(e.target.value as CookAssignment)}>
+                <option value="manual">Pick manually</option>
+                <option value="rotate">Rotate fairly</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Who does dishes</label>
+              <select className="input" value={dishesAssignment} onChange={(e) => setDishesAssignment(e.target.value as DishesAssignment)}>
+                <option value="manual">Pick manually</option>
+                <option value="rotate">Rotate fairly</option>
+                <option value="not-cook">Rotate fairly, never the cook</option>
+              </select>
+            </div>
+          </div>
         </div>
         <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
           <h3 className="font-bold">Evening reminders</h3>

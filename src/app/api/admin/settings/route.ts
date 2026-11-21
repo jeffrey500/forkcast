@@ -24,6 +24,10 @@ export const PUT = handle(async (req: Request) => {
     if (b.agreementRule === "any" || b.agreementRule === "majority" || b.agreementRule === "all") {
       s.agreementRule = b.agreementRule;
     }
+    if (b.cookAssignment === "manual" || b.cookAssignment === "rotate") s.cookAssignment = b.cookAssignment;
+    if (b.dishesAssignment === "manual" || b.dishesAssignment === "rotate" || b.dishesAssignment === "not-cook") {
+      s.dishesAssignment = b.dishesAssignment;
+    }
     if (Array.isArray(b.staples)) {
       s.staples = [...new Set(b.staples.map((x) => str(x, 60)).filter(Boolean))].slice(0, 50);
     }

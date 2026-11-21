@@ -1,6 +1,6 @@
 import { read, update } from "@/lib/store";
 import { body, handle, HttpError, isoDate, num, requireMember, str } from "@/lib/server";
-import type { Meal, Recipe } from "@/lib/types";
+import type { Meal, Recipe, User } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -9,7 +9,14 @@ export const PUT = handle(async (req: Request, ctx: Ctx) => {
   const me = await requireMember();
   const { id } = await ctx.params;
   const b = await body(req);
-  const recipes = await read<Recipe[]>("recipes", []);
+  const [recipes, users] = await Promise.all([read<Recipe[]>("recipes", []), read<User[]>("users", [])]);
+  let dishesId: string | null | undefined;
+  if (b.dishesId !== undefined) {
+    dishesId = str(b.dishesId, 60) || null;
+    if (dishesId && !users.some((u) => u.id === dishesId && u.status === "approved")) {
+      throw new HttpError(400, "Pick a roommate for the dishes.");
+    }
+  }
   const meal = await update<Meal[], Meal>("meals", [], (ms) => {
     const cur = ms.find((m) => m.id === id);
     if (!cur) throw new HttpError(404, "Meal not found.");
@@ -19,6 +26,7 @@ export const PUT = handle(async (req: Request, ctx: Ctx) => {
     if (b.servings !== undefined) next.servings = Math.max(1, Math.round(num(b.servings, cur.servings)));
     if (b.notes !== undefined) next.notes = str(b.notes, 500);
     if (b.cookId !== undefined) next.cookId = str(b.cookId, 60) || null;
+    if (dishesId !== undefined) next.dishesId = dishesId;
     if (b.status === "skipped" || (b.status === "planned" && cur.status === "skipped")) {
       next.status = b.status;
     }

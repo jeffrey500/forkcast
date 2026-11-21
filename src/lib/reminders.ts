@@ -75,6 +75,27 @@ async function buildReport(today: string): Promise<Report> {
     });
   }
 
+  const slotRank = (slot: string) => {
+    const i = settings.mealSlots.indexOf(slot);
+    return i < 0 ? settings.mealSlots.length : i;
+  };
+  const chores = tomorrowMeals
+    .filter((m) => (m.cookId && names.has(m.cookId)) || (m.dishesId && names.has(m.dishesId)))
+    .sort((a, b) => slotRank(a.slot) - slotRank(b.slot) || a.slot.localeCompare(b.slot) || a.createdAt.localeCompare(b.createdAt));
+  if (chores.length) {
+    shared.push({
+      heading: `Tomorrow's chores (${label(tomorrow)})`,
+      lines: chores.map((m) => {
+        const cook = m.cookId ? names.get(m.cookId) : undefined;
+        const dishes = m.dishesId ? names.get(m.dishesId) : undefined;
+        return {
+          main: `${m.slot}: ${m.title}`,
+          sub: [cook && `${cook} cooks`, dishes && `${dishes} does dishes`].filter(Boolean).join(" · "),
+        };
+      }),
+    });
+  }
+
   const thisWeek = weekStart(today, settings.weekStartDay);
   const nextWeek = addDays(thisWeek, 7);
   const sincePlanning = (new Date(`${today}T12:00:00`).getDay() - settings.planningDay + 7) % 7;

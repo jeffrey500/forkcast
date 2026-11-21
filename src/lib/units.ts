@@ -102,3 +102,15 @@ export function formatAmount(q: number, unit: string): string {
 export function roundUpQty(q: number): number {
   return Math.ceil(q * 100 - 1e-6) / 100;
 }
+
+/**
+ * Display/storage form for food names: case doesn't matter on input, and each
+ * word starts with a capital ("CHICKEN thigh" → "Chicken Thigh").
+ */
+export function titleCase(name: string): string {
+  return name
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(/(^|[\s-])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+}

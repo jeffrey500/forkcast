@@ -2,6 +2,12 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.6.0
+- **Who cooks and who does dishes:** every meal can have a cook and a dishwasher. Admins can set either to rotate fairly (dishes can be "never the cook"), and the planner's **Assign chores** button fills a week. The planner shows a weekly chores tally.
+- Evening reminders include tomorrow's cook and dishwasher.
+- Planned meals can be removed from the plan directly (no need to skip them first).
+- Food names ignore upper/lower case and are shown with each word capitalized ("chicken THIGH" → "Chicken Thigh").
+
 ## 0.5.0
 - Reminders can go to **Discord** as well as email. Admins choose the channels; a channel webhook posts one combined message that @mentions whoever still needs to vote.
 - Everyone can turn their own email reminders off and add a Discord user ID for mentions (in **Your profile**).

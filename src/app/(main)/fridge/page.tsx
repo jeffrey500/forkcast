@@ -7,7 +7,7 @@ import { EmptyState, UnitInput } from "@/components/ui";
 import ReceiptScanner from "@/components/ReceiptScanner";
 import { addDays, dayName, shortDate } from "@/lib/dates";
 import { mealIngredients, type Shortfall } from "@/lib/inventory";
-import { convert, formatAmount, normalizeName, roundUpQty } from "@/lib/units";
+import { convert, formatAmount, normalizeName, roundUpQty, titleCase } from "@/lib/units";
 import type { FridgeItem, ShoppingItem } from "@/lib/types";
 
 export default function FridgePage() {
@@ -16,10 +16,15 @@ export default function FridgePage() {
   const [scanning, setScanning] = useState(false);
 
   const ingredientNames = useMemo(() => {
-    const s = new Set<string>();
-    state.recipes.forEach((r) => r.ingredients.forEach((i) => s.add(i.name)));
-    state.fridge.forEach((f) => s.add(f.name));
-    return [...s].sort();
+    // One entry per item regardless of case/plural ("eggs", "Egg" → "Egg").
+    const byKey = new Map<string, string>();
+    const add = (n: string) => {
+      const key = normalizeName(n);
+      if (key && !byKey.has(key)) byKey.set(key, titleCase(n));
+    };
+    state.recipes.forEach((r) => r.ingredients.forEach((i) => add(i.name)));
+    state.fridge.forEach((f) => add(f.name));
+    return [...byKey.values()].sort((a, b) => a.localeCompare(b));
   }, [state.recipes, state.fridge]);
 
   /** How much of each fridge item planned meals will use. */
@@ -62,7 +67,7 @@ export default function FridgePage() {
           <AddRow
             cta="Add to fridge"
             onAdd={async (item) => {
-              if (await api("POST", "/api/fridge", item)) toast(`Added ${item.name}.`);
+              if (await api("POST", "/api/fridge", item)) toast(`Added ${titleCase(item.name)}.`);
             }}
           />
           {fridge.length === 0 ? (
@@ -130,7 +135,7 @@ function ShortfallRow({ s }: { s: Shortfall }) {
   return (
     <li className="flex flex-wrap items-center gap-2 py-2 text-sm">
       <div className="min-w-0 flex-1">
-        <b>{formatAmount(qty, s.unit)}</b> {s.name}
+        <b>{formatAmount(qty, s.unit)}</b> {titleCase(s.name)}
         <p className="text-xs text-ink/50">
           by {dayName(s.neededBy)} {shortDate(s.neededBy)} · {s.meals.join(", ")}
         </p>
@@ -143,7 +148,7 @@ function ShortfallRow({ s }: { s: Shortfall }) {
         className="btn-ghost btn-sm"
         title="Already bought it — put it in the fridge"
         onClick={async () => {
-          if (await api("POST", "/api/fridge", { name: s.name, quantity: qty, unit: s.unit })) toast(`${s.name} added to the fridge.`);
+          if (await api("POST", "/api/fridge", { name: s.name, quantity: qty, unit: s.unit })) toast(`${titleCase(s.name)} added to the fridge.`);
         }}
       >
         Bought
@@ -159,7 +164,7 @@ function ShoppingRow({ item, addedBy }: { item: ShoppingItem; addedBy: string })
   return (
     <li className="flex flex-wrap items-center gap-2 py-2 text-sm">
       <div className="min-w-0 flex-1">
-        <b>{formatAmount(item.quantity, item.unit)}</b> {item.name}
+        <b>{formatAmount(item.quantity, item.unit)}</b> {titleCase(item.name)}
         <p className="text-xs text-ink/50">added by {addedBy}</p>
       </div>
       <input
@@ -173,12 +178,12 @@ function ShoppingRow({ item, addedBy }: { item: ShoppingItem; addedBy: string })
       <button
         className="btn-primary btn-sm"
         onClick={async () => {
-          if (await api("DELETE", `/api/shopping/${item.id}?bought=1`)) toast(`${item.name} is in the fridge now.`);
+          if (await api("DELETE", `/api/shopping/${item.id}?bought=1`)) toast(`${titleCase(item.name)} is in the fridge now.`);
         }}
       >
         ✓ Bought
       </button>
-      <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/shopping/${item.id}`)} aria-label={`Remove ${item.name}`}>✕</button>
+      <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/shopping/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
     </li>
   );
 }
@@ -192,7 +197,7 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
   return (
     <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
       <div className="min-w-0 flex-1">
-        <p className="font-semibold">{item.name}</p>
+        <p className="font-semibold">{titleCase(item.name)}</p>
         <p className="text-xs text-ink/50">
           {planned > 0 ? (
             <span className={left < 0 ? "text-red-700" : ""}>
@@ -205,7 +210,7 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
         </p>
       </div>
       <div className="flex items-center gap-1">
-        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity - step)} aria-label={`Less ${item.name}`}>−</button>
+        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity - step)} aria-label={`Less ${titleCase(item.name)}`}>−</button>
         <input
           className="input w-20 py-1 text-center"
           type="number"
@@ -215,11 +220,11 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
           onChange={(e) => setQty(e.target.value)}
           onBlur={() => parseFloat(qty) !== item.quantity && save(parseFloat(qty) || 0)}
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-          aria-label={`${item.name} quantity`}
+          aria-label={`${titleCase(item.name)} quantity`}
         />
-        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity + step)} aria-label={`More ${item.name}`}>+</button>
+        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity + step)} aria-label={`More ${titleCase(item.name)}`}>+</button>
         <span className="w-10 text-xs text-ink/60">{item.unit}</span>
-        <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/fridge/${item.id}`)} aria-label={`Remove ${item.name}`}>✕</button>
+        <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/fridge/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
       </div>
     </div>
   );

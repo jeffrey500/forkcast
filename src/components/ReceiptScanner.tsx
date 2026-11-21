@@ -5,7 +5,7 @@ import { useApp } from "./AppProvider";
 import { Modal, UnitInput } from "./ui";
 import { LIBRARY } from "@/lib/library";
 import { parseReceiptText, suggestStocking, type ScannedItem, type Suggestion } from "@/lib/receipt";
-import { normalizeName } from "@/lib/units";
+import { normalizeName, titleCase } from "@/lib/units";
 import type { Ingredient } from "@/lib/types";
 
 type Method = "quick" | "claude";
@@ -95,7 +95,7 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
             : "Claude didn't find any groceries on that receipt.",
         );
       }
-      setRows(suggestStocking(items, state.shopping, known));
+      setRows(suggestStocking(items, state.shopping, known).map((r) => ({ ...r, name: titleCase(r.name) })));
       setStep("review");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -192,7 +192,7 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
                 <input className="input min-w-32 flex-1 py-1" value={r.name} onChange={(e) => set(i, { name: e.target.value })} aria-label="Item" />
                 <div className="flex w-full flex-wrap items-center gap-1 pl-6 text-[11px]">
                   {r.match.kind === "shopping" && <span className="chip bg-leaf-100 text-leaf-700">✓ On shopping list</span>}
-                  {r.match.kind === "known" && <span className="chip bg-sky-50 text-sky-700">Matches “{r.match.label}”</span>}
+                  {r.match.kind === "known" && <span className="chip bg-sky-50 text-sky-700">Matches “{titleCase(r.match.label)}”</span>}
                   {r.match.kind === "new" && <span className="chip bg-black/5 text-ink/60">New item</span>}
                   {r.checkUnit && <span className="chip bg-amber-100 text-amber-900">Check amount: you track this in {r.checkUnit}</span>}
                   {r.storage && <span className="chip bg-amber-50 text-amber-800">{r.storage}</span>}

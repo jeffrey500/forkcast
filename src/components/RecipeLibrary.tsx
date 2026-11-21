@@ -5,7 +5,7 @@ import { useApp } from "./AppProvider";
 import { Modal } from "./ui";
 import { consumeFromFridge } from "@/lib/inventory";
 import { LIBRARY, MEAL_LABEL, libraryToRecipe, type LibraryRecipe } from "@/lib/library";
-import { formatAmount } from "@/lib/units";
+import { formatAmount, titleCase } from "@/lib/units";
 import type { Recipe } from "@/lib/types";
 
 type MealFilter = "all" | "lunch" | "dinner";
@@ -37,7 +37,7 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
     .filter((r) => !tag || r.tags.includes(tag))
     .filter((r) => {
       const q = query.trim().toLowerCase();
-      return !q || r.name.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.includes(q));
+      return !q || r.name.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q));
     })
     // Things you can make with what's in the fridge first.
     .sort((a, b) => (missing.get(a.id) ?? 0) - (missing.get(b.id) ?? 0) || a.minutes - b.minutes);
@@ -133,7 +133,7 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
                   return (
                     <li key={ing.name} className={have ? "" : "text-red-700"}>
                       {have ? "✓ " : "· "}
-                      <b>{formatAmount(ing.quantity, ing.unit)}</b> {ing.name}
+                      <b>{formatAmount(ing.quantity, ing.unit)}</b> {titleCase(ing.name)}
                     </li>
                   );
                 })}
