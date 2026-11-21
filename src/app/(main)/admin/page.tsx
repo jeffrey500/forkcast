@@ -1,0 +1,230 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useApp } from "@/components/AppProvider";
+import { DAY_NAMES } from "@/lib/dates";
+import type { AgreementRule, PublicUser } from "@/lib/types";
+
+export default function AdminPage() {
+  const { state } = useApp();
+  if (state.me.role !== "admin") {
+    return <p className="text-sm text-ink/60">Only admins can see this page.</p>;
+  }
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-extrabold">Admin</h1>
+        <p className="text-sm text-ink/60">Approve roommates and set how planning works.</p>
+      </div>
+      <Users />
+      <SettingsForm />
+    </div>
+  );
+}
+
+function Users() {
+  const { state, api, toast, refresh } = useApp();
+  const [users, setUsers] = useState<PublicUser[] | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/users", { cache: "no-store" });
+    if (res.ok) setUsers((await res.json()).users);
+  }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data load
+    load();
+  }, [load]);
+
+  async function act(u: PublicUser, method: string, body?: object, msg?: string) {
+    if (await api(method, `/api/admin/users/${u.id}`, body)) {
+      if (msg) toast(msg);
+      await load();
+      await refresh();
+    }
+  }
+
+  if (!users) return <p className="text-sm text-ink/50">Loading accounts…</p>;
+  const pending = users.filter((u) => u.status === "pending");
+  const others = users.filter((u) => u.status !== "pending");
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-bold">Accounts</h2>
+      {pending.length > 0 && (
+        <div className="card border-amber-200 bg-amber-50/60 p-4">
+          <h3 className="mb-2 text-sm font-bold text-amber-900">Waiting for approval</h3>
+          <ul className="divide-y divide-amber-200/60">
+            {pending.map((u) => (
+              <li key={u.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <div className="flex-1">
+                  <b>{u.name}</b> <span className="text-ink/60">{u.email}</span>
+                  <p className="text-xs text-ink/50">asked {new Date(u.createdAt).toLocaleString()}</p>
+                </div>
+                <button className="btn-primary btn-sm" onClick={() => act(u, "PUT", { status: "approved" }, `${u.name} can now access the household.`)}>
+                  Approve
+                </button>
+                <button className="btn-danger btn-sm" onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} was rejected.`)}>Reject</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="card divide-y divide-black/5">
+        {others.map((u) => (
+          <div key={u.id} className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
+            <div className="min-w-0 flex-1">
+              <b>{u.name}</b> {u.id === state.me.id && <span className="text-xs text-ink/50">(you)</span>}
+              <p className="text-xs text-ink/50">{u.email}</p>
+            </div>
+            <span className={`chip ${u.status === "approved" ? "bg-leaf-100 text-leaf-700" : "bg-red-50 text-red-700"}`}>{u.status}</span>
+            <span className={`chip ${u.role === "admin" ? "bg-ink text-white" : "bg-black/5 text-ink/60"}`}>{u.role}</span>
+            {u.status === "approved" ? (
+              <>
+                <button className="btn-outline btn-sm" onClick={() => act(u, "PUT", { role: u.role === "admin" ? "member" : "admin" })}>
+                  {u.role === "admin" ? "Make member" : "Make admin"}
+                </button>
+                {u.id !== state.me.id && (
+                  <button className="btn-ghost btn-sm" onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} no longer has access.`)}>
+                    Revoke
+                  </button>
+                )}
+              </>
+            ) : (
+              <button className="btn-outline btn-sm" onClick={() => act(u, "PUT", { status: "approved" })}>Approve</button>
+            )}
+            {u.id !== state.me.id && (
+              <button
+                className="btn-danger btn-sm"
+                onClick={() => confirm(`Delete ${u.name}'s account?`) && act(u, "DELETE", undefined, "Account deleted.")}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SettingsForm() {
+  const { state, api, toast } = useApp();
+  const s = state.settings;
+  const [householdName, setHouseholdName] = useState(s.householdName);
+  const [planningDay, setPlanningDay] = useState(s.planningDay);
+  const [weekStartDay, setWeekStartDay] = useState(s.weekStartDay);
+  const [slots, setSlots] = useState(s.mealSlots.join(", "));
+  const [agreementRule, setAgreementRule] = useState<AgreementRule>(s.agreementRule);
+  const [staples, setStaples] = useState(s.staples.join(", "));
+  const [claudeModel, setClaudeModel] = useState(s.claudeModel);
+  const [apiKey, setApiKey] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const ok = await api("PUT", "/api/admin/settings", {
+      householdName,
+      planningDay,
+      weekStartDay,
+      mealSlots: slots.split(",").map((x) => x.trim()).filter(Boolean),
+      agreementRule,
+      staples: staples.split(",").map((x) => x.trim()).filter(Boolean),
+      claudeModel,
+      ...(apiKey ? { anthropicApiKey: apiKey } : {}),
+    });
+    setBusy(false);
+    if (ok) {
+      setApiKey("");
+      toast("Settings saved.");
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-bold">Settings</h2>
+      <form onSubmit={save} className="card grid gap-5 p-5 md:grid-cols-2">
+        <div>
+          <label className="label">Household name</label>
+          <input className="input" value={householdName} onChange={(e) => setHouseholdName(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Meal slots (comma separated, in order)</label>
+          <input className="input" value={slots} onChange={(e) => setSlots(e.target.value)} placeholder="Breakfast, Lunch, Dinner" />
+        </div>
+        <div>
+          <label className="label">Planning day</label>
+          <select className="input" value={planningDay} onChange={(e) => setPlanningDay(parseInt(e.target.value))}>
+            {DAY_NAMES.map((d, i) => (
+              <option key={d} value={i}>{d}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-ink/50">On this day everyone gets a banner to plan next week&apos;s meals.</p>
+        </div>
+        <div>
+          <label className="label">Week starts on</label>
+          <select className="input" value={weekStartDay} onChange={(e) => setWeekStartDay(parseInt(e.target.value))}>
+            {DAY_NAMES.map((d, i) => (
+              <option key={d} value={i}>{d}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-ink/50">
+            Planning on {DAY_NAMES[planningDay]} covers the week starting the next {DAY_NAMES[weekStartDay]}.
+          </p>
+        </div>
+        <div>
+          <label className="label">A meal counts as agreed when</label>
+          <select className="input" value={agreementRule} onChange={(e) => setAgreementRule(e.target.value as AgreementRule)}>
+            <option value="any">Anyone proposes it</option>
+            <option value="majority">Most roommates agree</option>
+            <option value="all">Everyone agrees</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Staples (always on hand)</label>
+          <input className="input" value={staples} onChange={(e) => setStaples(e.target.value)} />
+          <p className="mt-1 text-xs text-ink/50">Never counted against the fridge.</p>
+        </div>
+        <div>
+          <label className="label">Claude model for ideas</label>
+          <select className="input" value={claudeModel} onChange={(e) => setClaudeModel(e.target.value)}>
+            <option value="claude-opus-5-5">Claude Opus 5.5 (best ideas)</option>
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (cheaper)</option>
+            <option value="claude-haiku-5-5">Claude Haiku 5.5 (cheapest)</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Claude API key</label>
+          <input
+            className="input font-mono"
+            type="password"
+            autoComplete="off"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={s.claudeKeySource === "settings" ? "•••••• saved — type to replace" : "sk-ant-…"}
+            disabled={s.claudeKeySource === "env"}
+          />
+          <p className="mt-1 text-xs text-ink/50">
+            {s.claudeKeySource === "env"
+              ? "Using ANTHROPIC_API_KEY from the Vercel environment."
+              : s.claudeKeySource === "settings"
+                ? "A key is saved. It stays on the server and is never shown to anyone."
+                : "Get one at console.anthropic.com. Stored server-side only."}
+          </p>
+          {s.claudeKeySource === "settings" && (
+            <button
+              type="button"
+              className="btn-danger btn-sm mt-1"
+              onClick={async () => (await api("PUT", "/api/admin/settings", { anthropicApiKey: "" })) && toast("API key removed.")}
+            >
+              Remove saved key
+            </button>
+          )}
+        </div>
+        <div className="flex justify-end md:col-span-2">
+          <button className="btn-primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
+        </div>
+      </form>
+    </section>
+  );
+}
