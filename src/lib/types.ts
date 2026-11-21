@@ -30,6 +30,25 @@ export interface Ingredient {
   unit: string;
 }
 
+/** Estimated nutrition for ONE serving of a recipe. */
+export interface NutritionFacts {
+  kcal: number;
+  /** grams */
+  protein: number;
+  /** grams */
+  carbs: number;
+  /** grams */
+  fat: number;
+}
+
+export interface Nutrition extends NutritionFacts {
+  /** "claude": analysed by Claude; "library": built-in estimate; "idea": came with a Claude idea. */
+  source: "claude" | "library" | "idea";
+  /** nutritionBasis() of the ingredients/servings this was computed for. If it no longer matches, the estimate is stale. */
+  basis: string;
+  analyzedAt: string;
+}
+
 export interface Recipe {
   id: string;
   name: string;
@@ -40,6 +59,8 @@ export interface Recipe {
   tags: string[];
   /** Set when copied from the built-in recipe library. */
   libraryId?: string;
+  /** Per-serving estimate; filled automatically after saving when a Claude key is set. */
+  nutrition?: Nutrition;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

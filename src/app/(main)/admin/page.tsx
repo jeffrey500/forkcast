@@ -127,6 +127,8 @@ function SettingsForm() {
   const [discordUrl, setDiscordUrl] = useState("");
   const [timezone, setTimezone] = useState(s.timezone);
   const [reminderResult, setReminderResult] = useState("");
+  const [nutritionResult, setNutritionResult] = useState("");
+  const [nutritionBusy, setNutritionBusy] = useState(false);
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [s.timezone];
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
@@ -238,6 +240,30 @@ function SettingsForm() {
               Remove saved key
             </button>
           )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={s.claudeKeySource === "none" || nutritionBusy}
+              title={s.claudeKeySource === "none" ? "Save a Claude API key first" : "Estimate calories for up to 25 recipes that don't have one yet"}
+              onClick={async () => {
+                setNutritionBusy(true);
+                setNutritionResult("Analysing recipes… this can take a minute.");
+                const r = await api<{ analyzed: number; skipped: number; failed: number; remaining: number }>("POST", "/api/admin/nutrition");
+                setNutritionBusy(false);
+                if (!r) return setNutritionResult("");
+                const parts = [
+                  r.analyzed || r.failed || r.remaining ? `Analysed ${r.analyzed}.` : "Every recipe already has a calorie estimate.",
+                  r.failed ? `${r.failed} failed.` : "",
+                  r.remaining ? `${r.remaining} still to go — click again.` : r.analyzed ? "All done." : "",
+                ].filter(Boolean);
+                setNutritionResult(parts.join(" "));
+              }}
+            >
+              {nutritionBusy ? "Analysing…" : "🔥 Analyse calories for all recipes"}
+            </button>
+            {nutritionResult && <span className="text-xs text-ink/70">{nutritionResult}</span>}
+          </div>
         </div>
         <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
           <h3 className="font-bold">Chores</h3>

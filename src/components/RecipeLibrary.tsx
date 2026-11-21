@@ -6,6 +6,7 @@ import { Modal } from "./ui";
 import { consumeFromFridge } from "@/lib/inventory";
 import { LIBRARY, MEAL_LABEL, libraryToRecipe, type LibraryRecipe } from "@/lib/library";
 import { formatAmount, titleCase } from "@/lib/units";
+import { formatKcal } from "@/lib/nutrition-shared";
 import type { Recipe } from "@/lib/types";
 
 type MealFilter = "all" | "lunch" | "dinner";
@@ -92,7 +93,14 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
               <button className="text-left" onClick={() => setOpen(r)}>
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold hover:text-leaf-700">{r.name}</h3>
-                  <span className="chip shrink-0 bg-black/5 text-ink/60">{r.minutes} min</span>
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="chip bg-black/5 text-ink/60">{r.minutes} min</span>
+                    {r.nutrition && (
+                      <span className="chip bg-orange-50 text-orange-800" title="Estimated calories per serving">
+                        {formatKcal(r.nutrition.kcal)}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-ink/60">{r.description}</p>
               </button>
@@ -124,6 +132,12 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
           <p className="mt-1 text-xs text-ink/50">
             {MEAL_LABEL[open.meal]} · {open.minutes} min · quantities below serve {open.servings}
           </p>
+          {open.nutrition && (
+            <p className="mt-2 rounded-lg bg-black/[0.03] px-3 py-2 text-xs text-ink/70" title="Built-in estimate">
+              <b>Per serving (estimate):</b> {formatKcal(open.nutrition.kcal)} · {Math.round(open.nutrition.protein)} g protein ·{" "}
+              {Math.round(open.nutrition.carbs)} g carbs · {Math.round(open.nutrition.fat)} g fat
+            </p>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <h3 className="mb-1 text-sm font-bold">Ingredients</h3>

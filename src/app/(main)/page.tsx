@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import MealForm, { type MealFormInit } from "@/components/MealForm";
+import MonthCalendar from "@/components/MonthCalendar";
 import { useForecast } from "@/components/useForecast";
-import { IngredientList } from "@/components/ui";
+import { IngredientList, Modal } from "@/components/ui";
 import { addDays, DAY_NAMES, dayName, fromISODate, shortDate, weekDays, weekLabel, weekStart } from "@/lib/dates";
 import { formatAmount, roundUpQty, titleCase } from "@/lib/units";
 import type { Meal } from "@/lib/types";
 import { repeatCandidates, type MealForecast } from "@/lib/inventory";
+import { dayKcalPerPerson, formatKcal, mealKcal } from "@/lib/nutrition-shared";
 
 export default function WeekPage() {
   const { state, api, toast } = useApp();
@@ -18,8 +20,10 @@ export default function WeekPage() {
   const thisWeek = weekStart(fc.today, settings.weekStartDay);
   const [start, setStart] = useState(thisWeek);
   const [form, setForm] = useState<MealFormInit | null>(null);
+  const [view, setView] = useState<"week" | "month">("week");
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [shopDate, setShopDate] = useState(fc.today);
+  const [statList, setStatList] = useState<StatKind | null>(null);
 
   const days = weekDays(start);
   const nextWeek = addDays(thisWeek, 7);
@@ -31,6 +35,17 @@ export default function WeekPage() {
   const shortCount = weekForecasts.filter((f) => f.readiness === "short").length;
   const pendingAgree = weekMeals.filter((m) => m.status === "planned" && !fc.isAgreed(m)).length;
   const weekShortfalls = fc.shortfalls.filter((s) => s.neededBy <= days[6]);
+  const slotOrder = (slot: string) => {
+    const i = slots.indexOf(slot);
+    return i === -1 ? slots.length : i;
+  };
+  const sortedWeekMeals = [...weekMeals].sort((a, b) => a.date.localeCompare(b.date) || slotOrder(a.slot) - slotOrder(b.slot));
+  const statMeals: Record<StatKind, Meal[]> = {
+    planned: sortedWeekMeals.filter((m) => m.status !== "skipped"),
+    votes: sortedWeekMeals.filter((m) => m.status === "planned" && !fc.isAgreed(m)),
+    short: sortedWeekMeals.filter((m) => fc.byMeal.get(m.id)?.readiness === "short"),
+    cooked: sortedWeekMeals.filter((m) => m.status === "cooked"),
+  };
   const nextWeekMeals = state.meals.filter((m) => m.date >= nextWeek && m.date <= addDays(nextWeek, 6)).length;
 
   async function onDrop(e: React.DragEvent, date: string, slot: string) {
@@ -92,11 +107,33 @@ export default function WeekPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-ink/50">
-            {start === thisWeek ? "This week" : start === nextWeek ? "Next week" : start < thisWeek ? "Past week" : "Upcoming week"}
+            {view === "month"
+              ? "Calendar"
+              : start === thisWeek
+                ? "This week"
+                : start === nextWeek
+                  ? "Next week"
+                  : start < thisWeek
+                    ? "Past week"
+                    : "Upcoming week"}
           </p>
-          <h1 className="text-2xl font-extrabold">{weekLabel(start)}</h1>
+          <h1 className="text-2xl font-extrabold">{view === "month" ? "Pick a day" : weekLabel(start)}</h1>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-1">
+          <div className="mr-1 flex rounded-lg bg-black/5 p-1 text-sm font-semibold" role="tablist" aria-label="Planner view">
+            {(["week", "month"] as const).map((v) => (
+              <button
+                key={v}
+                role="tab"
+                aria-selected={view === v}
+                onClick={() => setView(v)}
+                className={`rounded-md px-3 py-1 ${view === v ? "bg-white shadow-sm" : "text-ink/60 hover:text-ink"}`}
+              >
+                {v === "week" ? "Week" : "Month"}
+              </button>
+            ))}
+          </div>
+          {view === "week" && (<>
           {canRepeat > 0 && (
             <button
               className="btn-outline"
@@ -109,28 +146,54 @@ export default function WeekPage() {
           <button className="btn-outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">←</button>
           <button className="btn-outline" onClick={() => setStart(thisWeek)} disabled={start === thisWeek}>Today</button>
           <button className="btn-outline" onClick={() => setStart(addDays(start, 7))} aria-label="Next week">→</button>
+          </>)}
         </div>
       </div>
 
+      {view === "month" && (
+        <MonthCalendar
+          initialDate={start}
+          onPickDate={(iso) => {
+            setStart(weekStart(iso, settings.weekStartDay));
+            setView("week");
+          }}
+        />
+      )}
+
+      {view === "week" && (<>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Meals planned" value={weekMeals.filter((m) => m.status !== "skipped").length} />
-        <Stat label="Waiting on votes" value={pendingAgree} tone={pendingAgree ? "amber" : undefined} />
-        <Stat label="Short on food" value={shortCount} tone={shortCount ? "red" : undefined} />
-        <Stat label="Cooked" value={weekMeals.filter((m) => m.status === "cooked").length} tone="leaf" />
+        <Stat label={STAT_LABEL.planned} value={statMeals.planned.length} onClick={() => setStatList("planned")} />
+        <Stat label={STAT_LABEL.votes} value={pendingAgree} tone={pendingAgree ? "amber" : undefined} onClick={() => setStatList("votes")} />
+        <Stat label={STAT_LABEL.short} value={shortCount} tone={shortCount ? "red" : undefined} onClick={() => setStatList("short")} />
+        <Stat label={STAT_LABEL.cooked} value={statMeals.cooked.length} tone="leaf" onClick={() => setStatList("cooked")} />
       </div>
 
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
         {days.map((d) => {
           const isToday = d === fc.today;
+          const dayKcal = dayKcalPerPerson(weekMeals.filter((m) => m.date === d), state.recipes);
           return (
             <section key={d} className={`card flex flex-col p-3 ${isToday ? "ring-2 ring-leaf-500" : ""} ${d < fc.today ? "opacity-80" : ""}`}>
-              <header className="mb-2 flex items-baseline justify-between">
+              <header className="mb-2 flex items-baseline justify-between gap-2">
                 <h2 className="font-bold">
                   {dayName(d).slice(0, 3)}
                   {isToday && <span className="chip ml-1.5 bg-leaf-100 text-leaf-700">Today</span>}
                 </h2>
-                <p className="text-xs text-ink/50">{shortDate(d)}</p>
+                <div className="text-right">
+                  <p className="text-xs text-ink/50">{shortDate(d)}</p>
+                  {dayKcal.known > 0 && (
+                    <p
+                      className="text-[10px] leading-tight text-ink/40"
+                      title={`One serving of each planned meal${
+                        dayKcal.unknown > 0 ? `; ${dayKcal.unknown} meal${dayKcal.unknown === 1 ? "" : "s"} without an estimate` : ""
+                      }`}
+                    >
+                      {formatKcal(dayKcal.kcal)}/person
+                    </p>
+                  )}
+                </div>
               </header>
               <div className="flex flex-1 flex-col gap-2">
                 {slots.map((slot) => {
@@ -208,19 +271,113 @@ export default function WeekPage() {
         )}
         <Link href="/fridge" className="mt-3 inline-block text-sm font-semibold text-leaf-700">Open fridge &amp; shopping list →</Link>
       </section>
+      </>)}
+
+      {statList && (
+        <Modal title={`${STAT_LABEL[statList]} · ${weekLabel(start)}`} onClose={() => setStatList(null)} wide>
+          {statMeals[statList].length === 0 ? (
+            <p className="text-sm text-ink/60">Nothing here this week.</p>
+          ) : (
+            <ul className="divide-y divide-black/5">
+              {statMeals[statList].map((m) => (
+                <li key={m.id}>
+                  <button
+                    className="w-full rounded-lg px-2 py-2 text-left enabled:hover:bg-black/[0.03] focus-visible:bg-black/[0.03] disabled:cursor-default"
+                    disabled={m.status === "cooked"}
+                    title={m.status === "cooked" ? "Cooked meals can't be edited. Undo cooked on the meal card first." : undefined}
+                    onClick={() => {
+                      setStatList(null);
+                      setForm({ meal: m, date: m.date, slot: m.slot });
+                    }}
+                  >
+                    <p className="text-xs font-semibold text-ink/50">
+                      {dayName(m.date)} {shortDate(m.date)} · {m.slot}
+                    </p>
+                    <p className="font-semibold">{m.title}</p>
+                    <StatDetail kind={statList} meal={m} forecast={fc.byMeal.get(m.id)} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+      )}
 
       {form && <MealForm init={form} onClose={() => setForm(null)} />}
     </div>
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: "amber" | "red" | "leaf" }) {
+type StatKind = "planned" | "votes" | "short" | "cooked";
+const STAT_LABEL: Record<StatKind, string> = {
+  planned: "Meals planned",
+  votes: "Waiting on votes",
+  short: "Short on food",
+  cooked: "Cooked",
+};
+
+/** The category-specific detail line for a meal in a stat card's list. */
+function StatDetail({ kind, meal, forecast }: { kind: StatKind; meal: Meal; forecast?: MealForecast }) {
+  const { state, userName } = useApp();
+  const fc = useForecast();
+  const count = fc.agreeCount(meal);
+  const chores = [meal.cookId && `👩‍🍳 ${userName(meal.cookId)}`, meal.dishesId && `🧽 ${userName(meal.dishesId)}`].filter(Boolean).join(" · ");
+
+  if (kind === "votes") {
+    const waiting = state.users.filter((u) => !meal.agreedBy.includes(u.id)).map((u) => userName(u.id));
+    return (
+      <p className="mt-0.5 text-xs text-amber-800">
+        {count}/{state.users.length} agreed (needs {fc.needed}){waiting.length > 0 && ` · waiting on ${waiting.join(", ")}`}
+      </p>
+    );
+  }
+  if (kind === "short") {
+    return (
+      <p className="mt-0.5 text-xs text-red-700">
+        {forecast?.missing.length ? (
+          <>
+            Missing <IngredientList items={forecast.missing} />
+          </>
+        ) : (
+          "Short on ingredients"
+        )}
+      </p>
+    );
+  }
+  if (kind === "cooked") {
+    const by = meal.cookedBy ?? meal.cookId;
+    return <p className="mt-0.5 text-xs text-leaf-700">✓ Cooked{by ? ` by ${userName(by)}` : ""}</p>;
+  }
+  const agreed = fc.isAgreed(meal);
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1">
+      {meal.status === "cooked" ? (
+        <span className="chip bg-leaf-100 text-leaf-700">✓ Cooked</span>
+      ) : (
+        <span className={`chip ${agreed ? "bg-leaf-100 text-leaf-700" : "bg-amber-100 text-amber-800"}`}>
+          {agreed ? "Agreed" : "Proposed"} {count}/{state.users.length}
+        </span>
+      )}
+      {meal.status !== "cooked" && forecast?.readiness === "ok" && <span className="chip bg-sky-50 text-sky-700">In fridge</span>}
+      {meal.status !== "cooked" && forecast?.readiness === "after-shopping" && <span className="chip bg-violet-50 text-violet-700">After shopping</span>}
+      {meal.status !== "cooked" && forecast?.readiness === "short" && <span className="chip bg-red-50 text-red-700">Short</span>}
+      {chores && <span className="text-xs text-ink/50">{chores}</span>}
+    </div>
+  );
+}
+
+function Stat({ label, value, tone, onClick }: { label: string; value: number; tone?: "amber" | "red" | "leaf"; onClick: () => void }) {
   const color = tone === "red" ? "text-red-700" : tone === "amber" ? "text-amber-700" : tone === "leaf" ? "text-leaf-700" : "";
   return (
-    <div className="card px-4 py-3">
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Show ${label.toLowerCase()} this week`}
+      className="card cursor-pointer px-4 py-3 text-left transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:outline-none"
+    >
       <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
       <p className="text-xs font-semibold text-ink/50">{label}</p>
-    </div>
+    </button>
   );
 }
 
@@ -254,6 +411,7 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
   }
 
   const readiness = forecast?.readiness;
+  const kcal = mealKcal(meal, state.recipes);
   return (
     <div
       draggable={!cooked}
@@ -298,6 +456,11 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
             {readiness === "after-shopping" && <span className="chip bg-violet-50 text-violet-700">After shopping</span>}
             {readiness === "short" && <span className="chip bg-red-50 text-red-700">Short</span>}
           </>
+        )}
+        {kcal !== null && (
+          <span className="chip bg-orange-50 text-orange-800" title="Estimated calories per serving">
+            🔥 {formatKcal(kcal)}
+          </span>
         )}
       </div>
       {readiness === "short" && !cooked && !skipped && forecast && (

@@ -9,7 +9,7 @@
 
 **The free, self-hosted meal planner for people who share a fridge.**
 
-[![Version 0.6.2](https://img.shields.io/badge/version-0.6.2-2f855a)](CHANGELOG.md)
+[![Version 0.7.0](https://img.shields.io/badge/version-0.7.0-2f855a)](CHANGELOG.md)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
 [![Deploy on Vercel](https://img.shields.io/badge/deploy%20on-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/new)
@@ -40,6 +40,7 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 - **Propose and vote.** Anyone can propose a meal and everyone else votes. Admins choose whether one vote, most roommates, or everyone is needed for a meal to be agreed.
 - **Planning day.** Pick a day (Friday by default). On that day everyone sees a banner to plan next week, and the evening reminder nudges anyone who hasn't.
 - **Repeat last week.** Liked last week? One click fills just the empty slots with the same meals.
+- **Week or month.** Flip to the calendar to see which days had meals planned or made, jump to any date, and click a day to open its week. The numbers at the top of the week (planned, waiting on votes, short on food, cooked) open the list of meals behind them.
 - **Your slots, your way.** Lunch, dinner, or any slots you like. Drag meals between days, skip them, or remove them from the plan.
 
 ### 🧑‍🍳 Who cooks and who cleans
@@ -87,6 +88,8 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 </table>
 
 ### 📖 Recipes
+
+- **Calories, automatically.** Saving a recipe gets a per-serving estimate (calories, protein, carbs, fat) from Claude in the background; library recipes have built-in estimates. Meals show ~kcal per serving and each day shows a rough per-person total.
 
 - **Your recipe box.** The household's own recipes, with a **Can make now** badge based on what's in the fridge.
 - **A built-in library.** 30 easy, healthy lunches and dinners (15–40 min), sorted by what you can make right now and filterable.
@@ -148,6 +151,7 @@ Forkcast is a single Next.js app that runs on Vercel's free tier. There's no dat
    | `ADMIN_EMAILS` | | Comma-separated emails that become admins automatically when they sign up. |
    | `ALLOW_SIGNUPS` | | Set to `false` once everyone has joined, to stop new sign-up requests. |
    | `IDEAS_DAILY_LIMIT` | | Claude requests (ideas + receipt scans) per person per day (default 20). |
+   | `NUTRITION_DAILY_LIMIT` | | Automatic calorie analyses per household per day (default 60). |
    | `CRON_SECRET` | for reminders | A long random string. Vercel sends it to the daily reminder job so nobody else can trigger it. |
    | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | for email reminders | Where reminder emails are sent from. See [Set up reminders](#set-up-reminders). |
    | `DISCORD_WEBHOOK_URL` | | Posts reminders to a Discord channel. You can also paste it in **Admin → Settings** instead. |

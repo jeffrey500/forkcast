@@ -6,11 +6,14 @@ import { LIBRARY } from "./library";
 import { discordWebhook } from "./discord";
 import { read } from "./store";
 import { titleCase } from "./units";
+import { nutritionBasis } from "./nutrition-shared";
 import { SESSION_COOKIE, verifySession } from "./session";
 import {
   DEFAULT_SETTINGS,
   type PublicSettings,
   type PublicUser,
+  type Nutrition,
+  type NutritionFacts,
   type Settings,
   type User,
 } from "./types";
@@ -147,18 +150,39 @@ export function cleanIngredients(v: unknown) {
     .slice(0, 100);
 }
 
+/** Per-serving nutrition numbers, or null if any is missing or unrealistic (kcal 0–5000, macros 0–500 g). */
+export function cleanNutritionFacts(v: unknown): NutritionFacts | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const vals = [o.kcal, o.protein, o.carbs, o.fat];
+  if (!vals.every((x) => typeof x === "number" && Number.isFinite(x))) return null;
+  const [kcal, protein, carbs, fat] = vals as number[];
+  if (kcal < 0 || kcal > 5000) return null;
+  if ([protein, carbs, fat].some((g) => g < 0 || g > 500)) return null;
+  return { kcal: Math.round(kcal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat) };
+}
+
 export function cleanRecipe(b: Record<string, unknown>) {
   const name = str(b.name, 120);
   if (!name) throw new HttpError(400, "Recipe needs a name.");
+  const servings = Math.max(1, Math.round(num(b.servings, 2)));
+  const ingredients = cleanIngredients(b.ingredients);
+  // Optional estimate sent by the browser (built-in library or a Claude idea). Claude analyses are server-side only.
+  const n = b.nutrition as Record<string, unknown> | undefined;
+  const source = n && typeof n === "object" && (n.source === "library" || n.source === "idea") ? n.source : null;
+  const facts = source ? cleanNutritionFacts(n) : null;
+  const nutrition: Nutrition | null =
+    source && facts ? { ...facts, source, basis: nutritionBasis({ servings, ingredients }), analyzedAt: nowIso() } : null;
   return {
     name,
     description: str(b.description, 1000),
-    servings: Math.max(1, Math.round(num(b.servings, 2))),
-    ingredients: cleanIngredients(b.ingredients),
+    servings,
+    ingredients,
     instructions: str(b.instructions, 10000),
     tags: Array.isArray(b.tags) ? b.tags.map((t) => str(t, 30)).filter(Boolean).slice(0, 12) : [],
     ...(typeof b.libraryId === "string" && LIBRARY.some((r) => r.id === b.libraryId)
       ? { libraryId: b.libraryId }
       : {}),
+    ...(nutrition ? { nutrition } : {}),
   };
 }

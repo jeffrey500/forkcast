@@ -1,4 +1,4 @@
-import type { Ingredient } from "./types";
+import type { Ingredient, NutritionFacts } from "./types";
 
 /**
  * Built-in library of easy, healthy lunches and dinners. These are separate
@@ -22,6 +22,8 @@ export interface LibraryRecipe {
   pantry: string[];
   steps: string[];
   tags: string[];
+  /** Approximate nutrition per serving (built-in estimate). */
+  nutrition?: NutritionFacts;
 }
 
 const i = (name: string, quantity: number, unit = ""): Ingredient => ({ name, quantity, unit });
@@ -43,6 +45,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Spread over the tortillas, add a handful of spinach and roll up.",
     ],
     tags: ["vegetarian", "no-cook", "high-fiber"],
+    nutrition: { kcal: 440, protein: 15, carbs: 56, fat: 18 },
   },
   {
     id: "greek-chicken-salad",
@@ -66,6 +69,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Toss the vegetables with olive oil and lemon juice, then top with sliced chicken and crumbled feta.",
     ],
     tags: ["high-protein", "low-carb"],
+    nutrition: { kcal: 410, protein: 41, carbs: 16, fat: 21 },
   },
   {
     id: "tuna-white-bean-salad",
@@ -82,6 +86,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Season and serve as it is, or on toast.",
     ],
     tags: ["high-protein", "no-cook", "high-fiber"],
+    nutrition: { kcal: 360, protein: 25, carbs: 32, fat: 15 },
   },
   {
     id: "egg-fried-rice",
@@ -99,6 +104,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Return the eggs, then add soy sauce, a drop of sesame oil and the spring onions.",
     ],
     tags: ["vegetarian", "quick", "budget"],
+    nutrition: { kcal: 480, protein: 20, carbs: 61, fat: 18 },
   },
   {
     id: "red-lentil-soup",
@@ -115,6 +121,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Simmer for 20 minutes until the lentils collapse, then blend or leave chunky.",
     ],
     tags: ["vegan", "batch-cook", "high-fiber", "budget"],
+    nutrition: { kcal: 440, protein: 22, carbs: 68, fat: 10 },
   },
   {
     id: "mediterranean-quinoa-salad",
@@ -138,6 +145,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Toss everything with lemon juice and olive oil, then crumble the feta over the top.",
     ],
     tags: ["vegetarian", "meal-prep", "high-fiber"],
+    nutrition: { kcal: 600, protein: 23, carbs: 76, fat: 23 },
   },
   {
     id: "turkey-hummus-pitas",
@@ -153,6 +161,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Spread hummus inside and fill with turkey, cucumber slices and grated carrot.",
     ],
     tags: ["high-protein", "quick"],
+    nutrition: { kcal: 320, protein: 23, carbs: 45, fat: 6 },
   },
   {
     id: "black-bean-quesadillas",
@@ -169,6 +178,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Cook in a lightly oiled pan for 2–3 minutes per side, then cut and serve with salsa.",
     ],
     tags: ["vegetarian", "quick", "high-fiber"],
+    nutrition: { kcal: 640, protein: 29, carbs: 80, fat: 23 },
   },
   {
     id: "spinach-feta-omelette",
@@ -185,6 +195,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Fold over and serve. Make two smaller omelettes if your pan is small.",
     ],
     tags: ["vegetarian", "high-protein", "low-carb", "quick"],
+    nutrition: { kcal: 250, protein: 17, carbs: 5, fat: 18 },
   },
   {
     id: "peanut-noodle-salad",
@@ -201,6 +212,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Toss with the noodles and the shredded carrot and cucumber.",
     ],
     tags: ["vegetarian", "meal-prep"],
+    nutrition: { kcal: 470, protein: 23, carbs: 75, fat: 11 },
   },
   {
     id: "cottage-cheese-toast",
@@ -216,6 +228,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Top with sliced cucumber and tomatoes, plus a crack of pepper and some chili flakes.",
     ],
     tags: ["vegetarian", "high-protein", "quick"],
+    nutrition: { kcal: 290, protein: 19, carbs: 37, fat: 7 },
   },
   {
     id: "miso-tofu-noodle-soup",
@@ -232,6 +245,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Season with a dash of soy sauce and top with sliced spring onion.",
     ],
     tags: ["vegan", "quick"],
+    nutrition: { kcal: 300, protein: 20, carbs: 35, fat: 8 },
   },
   {
     id: "burrito-bowl",
@@ -255,6 +269,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Pile onto the rice with chopped tomatoes and avocado, then squeeze lime over the top.",
     ],
     tags: ["vegan", "high-fiber", "meal-prep"],
+    nutrition: { kcal: 690, protein: 21, carbs: 126, fat: 13 },
   },
   {
     id: "shakshuka",
@@ -271,6 +286,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Make four wells, crack in the eggs, then cover and cook for 5–7 minutes until the whites set.",
     ],
     tags: ["vegetarian", "high-protein", "one-pan"],
+    nutrition: { kcal: 330, protein: 16, carbs: 21, fat: 20 },
   },
 
   // --------------------------------------------------------------- dinner
@@ -289,6 +305,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Add the chicken and broccoli, season, and roast for 20 more minutes until the chicken is cooked through.",
     ],
     tags: ["high-protein", "one-pan", "gluten-free"],
+    nutrition: { kcal: 635, protein: 46, carbs: 52, fat: 28 },
   },
   {
     id: "lemon-garlic-salmon",
@@ -305,6 +322,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Roast at 200°C / 400°F for 12–14 minutes. Squeeze the lemon over before serving.",
     ],
     tags: ["high-protein", "omega-3", "gluten-free"],
+    nutrition: { kcal: 535, protein: 35, carbs: 42, fat: 26 },
   },
   {
     id: "turkey-taco-lettuce-wraps",
@@ -321,6 +339,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Spoon into lettuce leaves and top with diced tomato, avocado and lime.",
     ],
     tags: ["high-protein", "low-carb", "gluten-free"],
+    nutrition: { kcal: 495, protein: 42, carbs: 17, fat: 30 },
   },
   {
     id: "chickpea-spinach-curry",
@@ -344,6 +363,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Add the chickpeas and coconut milk, simmer for 10 minutes, then wilt in the spinach.",
     ],
     tags: ["vegan", "batch-cook", "high-fiber", "gluten-free"],
+    nutrition: { kcal: 1150, protein: 31, carbs: 147, fat: 51 },
   },
   {
     id: "beef-broccoli-stir-fry",
@@ -361,6 +381,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Return the beef with 2 tbsp soy sauce and 1 tsp honey. Toss and serve over rice.",
     ],
     tags: ["high-protein"],
+    nutrition: { kcal: 790, protein: 49, carbs: 92, fat: 24 },
   },
   {
     id: "turkey-bolognese",
@@ -384,6 +405,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Meanwhile cook the spaghetti, then toss it with the sauce.",
     ],
     tags: ["high-protein", "high-fiber", "batch-cook"],
+    nutrition: { kcal: 725, protein: 46, carbs: 89, fat: 22 },
   },
   {
     id: "garlic-shrimp-zoodles",
@@ -400,6 +422,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Add the tomatoes and zucchini and toss for 2 minutes. Finish with lemon.",
     ],
     tags: ["high-protein", "low-carb", "quick", "gluten-free"],
+    nutrition: { kcal: 335, protein: 35, carbs: 17, fat: 15 },
   },
   {
     id: "sweet-potato-black-bean-chili",
@@ -422,6 +445,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Add the drained beans and cook for 5 minutes more.",
     ],
     tags: ["vegan", "batch-cook", "high-fiber", "gluten-free"],
+    nutrition: { kcal: 400, protein: 16, carbs: 68, fat: 9 },
   },
   {
     id: "teriyaki-tofu-bowls",
@@ -438,6 +462,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Stir 3 tbsp soy sauce, 1 tbsp honey and a pinch of garlic powder into the tofu until sticky. Serve over the rice.",
     ],
     tags: ["vegetarian", "high-protein"],
+    nutrition: { kcal: 810, protein: 38, carbs: 102, fat: 29 },
   },
   {
     id: "baked-cod-tomatoes",
@@ -454,6 +479,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Roast for 10–12 more minutes and serve with lemon wedges.",
     ],
     tags: ["high-protein", "low-carb", "one-pan", "gluten-free"],
+    nutrition: { kcal: 300, protein: 29, carbs: 12, fat: 16 },
   },
   {
     id: "chicken-fajita-traybake",
@@ -477,6 +503,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Roast for 20 minutes. Serve in warm tortillas with yogurt and lime.",
     ],
     tags: ["high-protein", "one-pan"],
+    nutrition: { kcal: 700, protein: 56, carbs: 67, fat: 23 },
   },
   {
     id: "quinoa-stuffed-peppers",
@@ -499,6 +526,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Halve the peppers, fill them, top with the rest of the cheese and bake for 20 minutes.",
     ],
     tags: ["vegetarian", "high-fiber", "meal-prep", "gluten-free"],
+    nutrition: { kcal: 585, protein: 29, carbs: 87, fat: 15 },
   },
   {
     id: "lemon-herb-chicken-couscous",
@@ -515,6 +543,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Stir in the chopped cucumber, tomatoes and lemon juice. Top with the sliced chicken.",
     ],
     tags: ["high-protein", "quick"],
+    nutrition: { kcal: 635, protein: 52, carbs: 69, fat: 16 },
   },
   {
     id: "pesto-gnocchi-greens",
@@ -531,6 +560,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Take off the heat, stir through the pesto and top with grated parmesan.",
     ],
     tags: ["vegetarian", "quick"],
+    nutrition: { kcal: 720, protein: 22, carbs: 97, fat: 27 },
   },
   {
     id: "turkey-meatballs-tomato",
@@ -554,6 +584,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Add the meatballs and spinach to the sauce and simmer for 5 minutes.",
     ],
     tags: ["high-protein", "batch-cook"],
+    nutrition: { kcal: 530, protein: 47, carbs: 25, fat: 27 },
   },
   {
     id: "honey-garlic-chicken-greens",
@@ -570,6 +601,7 @@ export const LIBRARY: LibraryRecipe[] = [
       "Steam or blanch the green beans for 4 minutes and serve everything together.",
     ],
     tags: ["high-protein"],
+    nutrition: { kcal: 805, protein: 49, carbs: 103, fat: 21 },
   },
 ];
 
@@ -602,5 +634,12 @@ export function libraryToRecipe(r: LibraryRecipe, servings: number) {
     instructions: r.pantry.length ? `${steps}\n\nFrom the pantry: ${r.pantry.join(", ")}.` : steps,
     tags: [...r.tags, ...(r.meal === "either" ? ["lunch", "dinner"] : [r.meal])].slice(0, 12),
     libraryId: r.id,
+    // Per-serving values don't change when the recipe is rescaled.
+    ...(r.nutrition ? { nutrition: { ...r.nutrition, source: "library" as const } } : {}),
   };
+}
+
+/** Per-serving calories for a library recipe, if known. */
+export function libraryKcal(r: LibraryRecipe): number | null {
+  return r.nutrition?.kcal ?? null;
 }

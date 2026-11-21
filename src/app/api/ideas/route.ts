@@ -20,6 +20,10 @@ const IdeaSchema = z.object({
       usesFromFridge: z.array(z.string()),
       needToBuy: z.array(z.string()),
       tags: z.array(z.string()),
+      kcal: z.number(),
+      protein: z.number(),
+      carbs: z.number(),
+      fat: z.number(),
     }),
   ),
 });
@@ -31,6 +35,7 @@ Rules for every idea:
 - usesFromFridge: ingredient names that come from the fridge list you were given.
 - needToBuy: ingredient names that are not in the fridge (ignore staples).
 - tags: 1-4 short tags like "quick", "vegetarian", "batch-cook".
+- kcal, protein, carbs, fat: estimated nutrition for ONE serving (not the whole recipe), from the ingredients you listed and standard nutrition data. kcal rounded to the nearest 5; protein, carbs and fat in whole grams.
 Do not repeat recipes the roommates already have.`;
 
 export const POST = handle(async (req: Request) => {

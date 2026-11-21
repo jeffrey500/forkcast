@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import MealForm, { type MealFormInit } from "@/components/MealForm";
 import { EmptyState, IngredientList, Modal, RecipeForm } from "@/components/ui";
@@ -9,11 +9,28 @@ import RecipeLibrary from "@/components/RecipeLibrary";
 import { LIBRARY } from "@/lib/library";
 import { consumeFromFridge } from "@/lib/inventory";
 import { formatAmount, normalizeName, titleCase } from "@/lib/units";
+import { currentNutrition, formatKcal, needsNutrition } from "@/lib/nutrition-shared";
 import type { Recipe } from "@/lib/types";
 
+/** How long after a save we show "analysing…" for a recipe that has no estimate yet. */
+const ANALYSING_WINDOW_MS = 2 * 60 * 1000;
+
 export default function RecipesPage() {
-  const { state, api, toast, userName } = useApp();
+  const { state, api, toast, userName, refresh } = useApp();
   const fc = useForecast();
+  const hasKey = state.settings.claudeKeySource !== "none";
+  const [now, setNow] = useState(() => Date.now());
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [analysing, setAnalysing] = useState(false);
+
+  // Keep "analysing…" hints honest: re-evaluate the 2-minute window every 15 s.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15_000);
+    return () => {
+      clearInterval(t);
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    };
+  }, []);
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState("");
   const [editing, setEditing] = useState<Recipe | "new" | null>(null);
@@ -61,8 +78,29 @@ export default function RecipesPage() {
       toast("Recipe saved.");
       setEditing(null);
       setViewing(null);
+      setNow(Date.now());
+      // The server estimates calories in the background; pick the result up once without a reload.
+      if (hasKey) {
+        if (refreshTimer.current) clearTimeout(refreshTimer.current);
+        refreshTimer.current = setTimeout(() => {
+          refreshTimer.current = null;
+          setNow(Date.now());
+          refresh();
+        }, 8000);
+      }
     }
   }
+
+  async function analyse(r: Recipe) {
+    setAnalysing(true);
+    const res = await api<{ recipe: Recipe }>("POST", `/api/recipes/${r.id}/nutrition`);
+    setAnalysing(false);
+    const n = res?.recipe?.nutrition;
+    if (res) toast(n ? `Calories estimated: ${formatKcal(n.kcal)} per serving.` : "Calories estimated.");
+  }
+
+  // Show the latest copy of the open recipe (e.g. after a re-analysis).
+  const viewed = viewing ? (state.recipes.find((r) => r.id === viewing.id) ?? viewing) : null;
 
   return (
     <div className="space-y-5">
@@ -120,6 +158,9 @@ export default function RecipesPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((r) => {
             const missing = missingNow.get(r.id) ?? 0;
+            const nutrition = currentNutrition(r);
+            const pending =
+              !nutrition && hasKey && needsNutrition(r) && now - Date.parse(r.updatedAt) < ANALYSING_WINDOW_MS;
             return (
               <button key={r.id} onClick={() => setViewing(r)} className="card p-4 text-left transition hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
@@ -133,6 +174,8 @@ export default function RecipesPage() {
                 {r.description && <p className="mt-1 line-clamp-2 text-sm text-ink/60">{r.description}</p>}
                 <p className="mt-2 text-xs text-ink/50">
                   Serves {r.servings} · {r.ingredients.length} ingredients
+                  {nutrition && <span title="Estimated calories per serving"> · {formatKcal(nutrition.kcal)}/serving</span>}
+                  {pending && <span className="text-ink/40"> · Calories: analysing…</span>}
                 </p>
                 {r.tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -149,22 +192,22 @@ export default function RecipesPage() {
 
       </>)}
 
-      {viewing && !editing && (
-        <Modal title={viewing.name} onClose={() => setViewing(null)} wide>
-          {viewing.description && <p className="text-sm text-ink/70">{viewing.description}</p>}
+      {viewed && !editing && (
+        <Modal title={viewed.name} onClose={() => setViewing(null)} wide>
+          {viewed.description && <p className="text-sm text-ink/70">{viewed.description}</p>}
           <p className="mt-1 text-xs text-ink/50">
-            Serves {viewing.servings} · added by {userName(viewing.createdBy)}
+            Serves {viewed.servings} · added by {userName(viewed.createdBy)}
           </p>
           <h3 className="mt-4 mb-1 text-sm font-bold">Ingredients</h3>
           <ul className="space-y-0.5 text-sm">
-            {viewing.ingredients.map((i, idx) => (
+            {viewed.ingredients.map((i, idx) => (
               <li key={idx}>
                 <b>{formatAmount(i.quantity, i.unit)}</b> {titleCase(i.name)}
               </li>
             ))}
           </ul>
           {(() => {
-            const miss = consumeFromFridge(state.fridge, viewing.ingredients, state.settings.staples, "").missing;
+            const miss = consumeFromFridge(state.fridge, viewed.ingredients, state.settings.staples, "").missing;
             return miss.length ? (
               <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
                 Not in the fridge right now: <IngredientList items={miss} />
@@ -173,18 +216,19 @@ export default function RecipesPage() {
               <p className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700">Everything is in the fridge right now.</p>
             );
           })()}
-          {viewing.instructions && (
+          <NutritionBlock recipe={viewed} hasKey={hasKey} busy={analysing} onAnalyse={() => analyse(viewed)} />
+          {viewed.instructions && (
             <>
               <h3 className="mt-4 mb-1 text-sm font-bold">Instructions</h3>
-              <p className="text-sm whitespace-pre-wrap text-ink/80">{viewing.instructions}</p>
+              <p className="text-sm whitespace-pre-wrap text-ink/80">{viewed.instructions}</p>
             </>
           )}
           <div className="mt-6 flex flex-wrap justify-between gap-2">
             <button
               className="btn-danger"
               onClick={async () => {
-                if (!confirm(`Delete “${viewing.name}”?`)) return;
-                if (await api("DELETE", `/api/recipes/${viewing.id}`)) {
+                if (!confirm(`Delete “${viewed.name}”?`)) return;
+                if (await api("DELETE", `/api/recipes/${viewed.id}`)) {
                   toast("Recipe deleted.");
                   setViewing(null);
                 }
@@ -193,11 +237,11 @@ export default function RecipesPage() {
               Delete
             </button>
             <div className="flex gap-2">
-              <button className="btn-outline" onClick={() => setEditing(viewing)}>Edit</button>
+              <button className="btn-outline" onClick={() => setEditing(viewed)}>Edit</button>
               <button
                 className="btn-primary"
                 onClick={() => {
-                  setPlanning({ date: fc.today, slot: state.settings.mealSlots.at(-1) ?? "Dinner", recipeId: viewing.id });
+                  setPlanning({ date: fc.today, slot: state.settings.mealSlots.at(-1) ?? "Dinner", recipeId: viewed.id });
                   setViewing(null);
                 }}
               >
@@ -215,6 +259,51 @@ export default function RecipesPage() {
       )}
 
       {planning && <MealForm init={planning} onClose={() => setPlanning(null)} />}
+    </div>
+  );
+}
+
+const SOURCE_LABEL: Record<NonNullable<Recipe["nutrition"]>["source"], string> = {
+  claude: "Estimated by Claude",
+  library: "Built-in estimate",
+  idea: "From Claude's idea",
+};
+
+function NutritionBlock({ recipe, hasKey, busy, onAnalyse }: { recipe: Recipe; hasKey: boolean; busy: boolean; onAnalyse: () => void }) {
+  const n = recipe.nutrition;
+  const stale = !!n && needsNutrition(recipe);
+  return (
+    <div className="mt-4 rounded-lg bg-black/[0.03] px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold">Nutrition per serving (estimate)</h3>
+        <button
+          type="button"
+          className="btn-outline btn-sm"
+          disabled={!hasKey || busy || recipe.ingredients.length === 0}
+          title={!hasKey ? "Add a Claude API key in Admin → Settings to analyse calories" : "Ask Claude to estimate calories and macros (one request)"}
+          onClick={onAnalyse}
+        >
+          {busy ? "Analysing…" : n ? "Re-analyse" : "Analyse calories"}
+        </button>
+      </div>
+      {n ? (
+        <>
+          <dl className={`mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-sm ${stale ? "text-ink/50" : ""}`}>
+            <div><dt className="inline text-ink/50">Calories </dt><dd className="inline font-semibold">{formatKcal(n.kcal)}</dd></div>
+            <div><dt className="inline text-ink/50">Protein </dt><dd className="inline font-semibold">{Math.round(n.protein)} g</dd></div>
+            <div><dt className="inline text-ink/50">Carbs </dt><dd className="inline font-semibold">{Math.round(n.carbs)} g</dd></div>
+            <div><dt className="inline text-ink/50">Fat </dt><dd className="inline font-semibold">{Math.round(n.fat)} g</dd></div>
+          </dl>
+          <p className="mt-0.5 text-xs text-ink/50">
+            {SOURCE_LABEL[n.source] ?? "Estimate"}
+            {stale && <span className="text-amber-800"> · Ingredients changed since this estimate</span>}
+          </p>
+        </>
+      ) : (
+        <p className="mt-1 text-xs text-ink/50">
+          {hasKey ? "No estimate yet." : "No estimate yet. Calories are estimated by Claude once an API key is added."}
+        </p>
+      )}
     </div>
   );
 }

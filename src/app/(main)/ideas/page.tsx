@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { formatAmount, titleCase } from "@/lib/units";
+import { formatKcal } from "@/lib/nutrition-shared";
 import type { Ingredient } from "@/lib/types";
 
 interface Idea {
@@ -16,7 +17,14 @@ interface Idea {
   usesFromFridge: string[];
   needToBuy: string[];
   tags: string[];
+  /** Per-serving estimates (may be missing from older responses). */
+  kcal?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
+
+const isNum = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 
 const PROMPTS = [
   "Something cozy and cheap",
@@ -65,6 +73,9 @@ export default function IdeasPage() {
       ingredients: idea.ingredients,
       instructions: idea.instructions,
       tags: [...idea.tags, "from-claude"],
+      ...(isNum(idea.kcal) && isNum(idea.protein) && isNum(idea.carbs) && isNum(idea.fat)
+        ? { nutrition: { kcal: idea.kcal, protein: idea.protein, carbs: idea.carbs, fat: idea.fat, source: "idea" } }
+        : {}),
     });
     if (ok) {
       setSaved((s) => new Set(s).add(idea.name));
@@ -139,6 +150,12 @@ export default function IdeasPage() {
             </div>
             <p className="mt-1 text-sm text-ink/70">{idea.description}</p>
             <div className="mt-2 flex flex-wrap gap-1">
+              {isNum(idea.kcal) && (
+                <span className="chip bg-orange-50 text-orange-800" title="Estimated per serving">
+                  {formatKcal(idea.kcal)}
+                  {isNum(idea.protein) && ` · ${Math.round(idea.protein)}g protein`}
+                </span>
+              )}
               {idea.tags.map((t) => (
                 <span key={t} className="chip bg-leaf-50 text-leaf-700">{t}</span>
               ))}

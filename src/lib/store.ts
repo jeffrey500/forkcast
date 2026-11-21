@@ -22,6 +22,7 @@ export type Collection =
   | "meals"
   | "shopping"
   | "usage"
+  | "nutritionUsage"
   | "reminders";
 
 // Connecting a Blob store in Vercel sets BLOB_READ_WRITE_TOKEN, or BLOB_STORE_ID

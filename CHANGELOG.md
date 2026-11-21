@@ -2,6 +2,13 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.7.0
+- **Automatic calorie analysis.** Saving a recipe (or a Claude idea) gets a per-serving estimate of calories, protein, carbs and fat from Claude in the background; it's redone when ingredients change. Library recipes come with built-in estimates.
+- Meal cards show ~kcal per serving, each day shows a rough per-person total, and recipe cards and details show the numbers. Admins can analyse all older recipes at once.
+- New optional `NUTRITION_DAILY_LIMIT` (default 60) caps automatic analyses per household per day.
+- The planner's stat cards (Meals planned, Waiting on votes, Short on food, Cooked) are clickable and list the meals behind each number.
+- **Calendar view:** switch the planner between Week and Month to see at a glance which days had meals planned or made, and jump to any date.
+
 ## 0.6.2
 - Redesigned README with every feature and fresh screenshots.
 
