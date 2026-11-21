@@ -118,6 +118,12 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 - **Close the door.** Once everyone has joined, set `ALLOW_SIGNUPS=false` to stop new sign-up requests.
 - **Your own profile.** Everyone can change their own display name, turn off reminder emails and add a Discord ID for @mentions. Nobody can change anyone else's.
 - **Always know what's running.** The version shows in the footer, on the login page and in **Admin → Settings**.
+- **Show password.** Tap the eye in the password field to check what you typed.
+
+### 📱 Made for your phone
+
+- **Phone-first layout.** One day at a time with a day picker, big tap targets, bottom navigation and bottom-sheet dialogs. No sideways scrolling and no zooming in when you type.
+- **Add to Home Screen.** Open Forkcast in Safari or Chrome and choose *Add to Home Screen*: it gets its own icon and opens full screen like an app.
 
 ## How it works
 

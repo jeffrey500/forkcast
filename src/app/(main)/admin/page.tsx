@@ -59,14 +59,22 @@ function Users() {
           <ul className="divide-y divide-amber-200/60">
             {pending.map((u) => (
               <li key={u.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1 [overflow-wrap:anywhere] max-sm:basis-full">
                   <b>{u.name}</b> <span className="text-ink/60">{u.email}</span>
                   <p className="text-xs text-ink/50">asked {new Date(u.createdAt).toLocaleString()}</p>
                 </div>
-                <button className="btn-primary btn-sm" onClick={() => act(u, "PUT", { status: "approved" }, `${u.name} can now access the household.`)}>
+                <button
+                  className="btn-primary btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm"
+                  onClick={() => act(u, "PUT", { status: "approved" }, `${u.name} can now access the household.`)}
+                >
                   Approve
                 </button>
-                <button className="btn-danger btn-sm" onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} was rejected.`)}>Reject</button>
+                <button
+                  className="btn-danger btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm"
+                  onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} was rejected.`)}
+                >
+                  Reject
+                </button>
               </li>
             ))}
           </ul>
@@ -75,34 +83,44 @@ function Users() {
       <div className="card divide-y divide-black/5">
         {others.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 max-sm:basis-full">
               <b>{u.name}</b> {u.id === state.me.id && <span className="text-xs text-ink/50">(you)</span>}
-              <p className="text-xs text-ink/50">{u.email}</p>
+              <p className="text-xs text-ink/50 [overflow-wrap:anywhere]">{u.email}</p>
             </div>
-            <span className={`chip ${u.status === "approved" ? "bg-leaf-100 text-leaf-700" : "bg-red-50 text-red-700"}`}>{u.status}</span>
-            <span className={`chip ${u.role === "admin" ? "bg-ink text-white" : "bg-black/5 text-ink/60"}`}>{u.role}</span>
-            {u.status === "approved" ? (
-              <>
-                <button className="btn-outline btn-sm" onClick={() => act(u, "PUT", { role: u.role === "admin" ? "member" : "admin" })}>
-                  {u.role === "admin" ? "Make member" : "Make admin"}
-                </button>
-                {u.id !== state.me.id && (
-                  <button className="btn-ghost btn-sm" onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} no longer has access.`)}>
-                    Revoke
+            {/* On phones chips and buttons get their own lines; from sm up the wrappers vanish (display: contents). */}
+            <div className="flex items-center gap-2 max-sm:w-full sm:contents">
+              <span className={`chip ${u.status === "approved" ? "bg-leaf-100 text-leaf-700" : "bg-red-50 text-red-700"}`}>{u.status}</span>
+              <span className={`chip ${u.role === "admin" ? "bg-ink text-white" : "bg-black/5 text-ink/60"}`}>{u.role}</span>
+            </div>
+            <div className="flex gap-2 max-sm:w-full sm:contents">
+              {u.status === "approved" ? (
+                <>
+                  <button className="btn-outline btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm" onClick={() => act(u, "PUT", { role: u.role === "admin" ? "member" : "admin" })}>
+                    {u.role === "admin" ? "Make member" : "Make admin"}
                   </button>
-                )}
-              </>
-            ) : (
-              <button className="btn-outline btn-sm" onClick={() => act(u, "PUT", { status: "approved" })}>Approve</button>
-            )}
-            {u.id !== state.me.id && (
-              <button
-                className="btn-danger btn-sm"
-                onClick={() => confirm(`Delete ${u.name}'s account?`) && act(u, "DELETE", undefined, "Account deleted.")}
-              >
-                Delete
-              </button>
-            )}
+                  {u.id !== state.me.id && (
+                    <button
+                      className="btn-ghost btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm"
+                      onClick={() => act(u, "PUT", { status: "rejected" }, `${u.name} no longer has access.`)}
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button className="btn-outline btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm" onClick={() => act(u, "PUT", { status: "approved" })}>
+                  Approve
+                </button>
+              )}
+              {u.id !== state.me.id && (
+                <button
+                  className="btn-danger btn-sm whitespace-nowrap max-sm:min-h-10 max-sm:flex-1 max-sm:text-sm"
+                  onClick={() => confirm(`Delete ${u.name}'s account?`) && act(u, "DELETE", undefined, "Account deleted.")}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -163,7 +181,7 @@ function SettingsForm() {
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-bold">Settings</h2>
-      <form onSubmit={save} className="card grid gap-5 p-5 md:grid-cols-2">
+      <form onSubmit={save} className="card grid grid-cols-1 gap-5 p-4 sm:p-5 md:grid-cols-2">
         <div>
           <label className="label">Household name</label>
           <input className="input" value={householdName} onChange={(e) => setHouseholdName(e.target.value)} />
@@ -243,7 +261,7 @@ function SettingsForm() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="btn-outline btn-sm"
+              className="btn-outline btn-sm max-sm:min-h-10 max-sm:w-full max-sm:text-sm"
               disabled={s.claudeKeySource === "none" || nutritionBusy}
               title={s.claudeKeySource === "none" ? "Save a Claude API key first" : "Estimate calories for up to 25 recipes that don't have one yet"}
               onClick={async () => {
@@ -265,12 +283,12 @@ function SettingsForm() {
             {nutritionResult && <span className="text-xs text-ink/70">{nutritionResult}</span>}
           </div>
         </div>
-        <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
+        <div className="rounded-xl border border-black/10 p-3 sm:p-4 md:col-span-2">
           <h3 className="font-bold">Chores</h3>
           <p className="mt-1 text-xs text-ink/60">
             Automatic picks only fill meals where nobody was chosen, and spread the work evenly within each week.
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Who cooks</label>
               <select className="input" value={cookAssignment} onChange={(e) => setCookAssignment(e.target.value as CookAssignment)}>
@@ -288,7 +306,7 @@ function SettingsForm() {
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
+        <div className="rounded-xl border border-black/10 p-3 sm:p-4 md:col-span-2">
           <h3 className="font-bold">Evening reminders</h3>
           <p className="mt-1 text-xs text-ink/60">
             Every evening the household is reminded when tomorrow has no agreed meal, when next week is still unplanned after
@@ -296,8 +314,8 @@ function SettingsForm() {
             there&apos;s nothing to remind anyone about. Choose where reminders go:
           </p>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg bg-black/[0.03] p-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="min-w-0 rounded-lg bg-black/[0.03] p-3">
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderEmails} onChange={(e) => setReminderEmails(e.target.checked)} />
                 📧 Email
@@ -307,7 +325,7 @@ function SettingsForm() {
                 {s.emailConfigured ? "✓ Email (SMTP) is set up." : "⚠ Not set up: add SMTP_HOST, SMTP_USER and SMTP_PASS in Vercel (see README)."}
               </p>
             </div>
-            <div className="rounded-lg bg-black/[0.03] p-3">
+            <div className="min-w-0 rounded-lg bg-black/[0.03] p-3">
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderDiscord} onChange={(e) => setReminderDiscord(e.target.checked)} />
                 💬 Discord
@@ -342,8 +360,8 @@ function SettingsForm() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="min-w-0">
               <label className="label">Household time zone</label>
               <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
                 {zones.map((z) => (
@@ -359,7 +377,7 @@ function SettingsForm() {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="btn-outline btn-sm"
+              className="btn-outline btn-sm max-sm:min-h-10 max-sm:w-full max-sm:text-sm"
               disabled={!s.emailConfigured}
               onClick={async () => {
                 setReminderResult("Checking the email login and sending you a test…");
@@ -371,7 +389,7 @@ function SettingsForm() {
             </button>
             <button
               type="button"
-              className="btn-outline btn-sm"
+              className="btn-outline btn-sm max-sm:min-h-10 max-sm:w-full max-sm:text-sm"
               disabled={s.discordSource === "none"}
               title={s.discordSource === "none" ? "Save a webhook URL first" : undefined}
               onClick={async () => {
@@ -384,7 +402,7 @@ function SettingsForm() {
             </button>
             <button
               type="button"
-              className="btn-outline btn-sm"
+              className="btn-outline btn-sm max-sm:min-h-10 max-sm:w-full max-sm:text-sm"
               disabled={!s.emailConfigured && s.discordSource === "none"}
               onClick={async () => {
                 setReminderResult("Sending…");
@@ -410,7 +428,7 @@ function SettingsForm() {
           </div>
         </div>
         <div className="flex justify-end md:col-span-2">
-          <button className="btn-primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
+          <button className="btn-primary max-sm:min-h-11 max-sm:w-full" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
         </div>
       </form>
     </section>

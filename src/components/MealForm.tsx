@@ -13,6 +13,9 @@ export interface MealFormInit {
   recipeId?: string;
 }
 
+/** Inputs get a 16px font and a taller box on phones (stops iOS zooming in on focus). */
+const FIELD = "input max-sm:min-h-11 max-sm:text-base";
+
 /** Add or edit a meal on the plan. */
 export default function MealForm({ init, onClose }: { init: MealFormInit; onClose: () => void }) {
   const { state, api, toast } = useApp();
@@ -77,7 +80,7 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
               type="button"
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 rounded-md py-1.5 ${mode === m ? "bg-white shadow-sm" : "text-ink/60"}`}
+              className={`flex-1 rounded-md py-1.5 max-sm:min-h-10 ${mode === m ? "bg-white shadow-sm" : "text-ink/60"}`}
             >
               {m === "recipe" ? "From a recipe" : "Something else"}
             </button>
@@ -91,14 +94,14 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
               <p className="text-sm text-ink/60">No recipes yet. Add some on the Recipes page, or use “Something else”.</p>
             ) : (
               <>
-                <input className="input mb-2" placeholder="Search recipes or tags…" value={search} onChange={(e) => setSearch(e.target.value)} />
-                <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-black/10 p-1">
+                <input className={`${FIELD} mb-2`} type="search" aria-label="Search recipes" placeholder="Search recipes or tags…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <div className="max-h-48 space-y-1 overflow-y-auto overscroll-contain rounded-lg border border-black/10 p-1 max-sm:max-h-[32vh]">
                   {recipes.map((r) => (
                     <button
                       type="button"
                       key={r.id}
                       onClick={() => setRecipeId(r.id)}
-                      className={`block w-full rounded-md px-3 py-2 text-left text-sm ${
+                      className={`block w-full rounded-md px-3 py-2 text-left text-sm max-sm:py-2.5 ${
                         r.id === recipeId ? "bg-leaf-100 font-semibold text-leaf-700" : "hover:bg-black/5"
                       }`}
                     >
@@ -114,29 +117,59 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
         ) : (
           <div>
             <label className="label">What are you eating?</label>
-            <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Eating out, leftovers, takeout…" />
+            <input className={FIELD} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Eating out, leftovers, takeout…" />
             <p className="mt-1 text-xs text-ink/50">Doesn&apos;t use anything from the fridge.</p>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">Day</label>
-            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            <p className="mt-1 text-xs text-ink/50">{date && `${dayName(date)}, ${shortDate(date)}`}</p>
+        <fieldset className="rounded-xl bg-black/[0.03] p-3">
+          <legend className="sr-only">When</legend>
+          <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
+            <div>
+              <label className="label" htmlFor="meal-date">Day</label>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  className="btn-outline shrink-0 px-2.5 max-sm:min-h-11 max-sm:min-w-11"
+                  onClick={() => setDate(addDays(date, -1))}
+                  aria-label="Previous day"
+                  title="Previous day"
+                >
+                  ‹
+                </button>
+                <input id="meal-date" className={`${FIELD} min-w-0`} type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                <button
+                  type="button"
+                  className="btn-outline shrink-0 px-2.5 max-sm:min-h-11 max-sm:min-w-11"
+                  onClick={() => setDate(addDays(date, 1))}
+                  aria-label="Next day"
+                  title="Next day"
+                >
+                  ›
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-ink/50">{date && `${dayName(date)}, ${shortDate(date)}`}</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="meal-slot">Slot</label>
+              <select id="meal-slot" className={FIELD} value={slot} onChange={(e) => setSlot(e.target.value)}>
+                {slots.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="label">Slot</label>
-            <select className="input" value={slot} onChange={(e) => setSlot(e.target.value)}>
-              {slots.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+          {meal && meal.status !== "cooked" && (
+            <p className="mt-2 text-xs text-ink/60">Change the day or slot to move this meal.</p>
+          )}
+        </fieldset>
+
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Servings</label>
             <input
-              className="input"
+              className={FIELD}
+              inputMode="numeric"
               type="number"
               min={1}
               placeholder={selected ? String(selected.servings) : "1"}
@@ -146,7 +179,7 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
           </div>
           <div>
             <label className="label">Who&apos;s cooking</label>
-            <select className="input" value={cookId} onChange={(e) => setCookId(e.target.value)}>
+            <select className={FIELD} value={cookId} onChange={(e) => setCookId(e.target.value)}>
               <option value="">Not decided</option>
               {state.users.map((u) => (
                 <option key={u.id} value={u.id}>{u.name}</option>
@@ -158,7 +191,7 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
           </div>
           <div>
             <label className="label">Who&apos;s doing dishes</label>
-            <select className="input" value={dishesId} onChange={(e) => setDishesId(e.target.value)}>
+            <select className={FIELD} value={dishesId} onChange={(e) => setDishesId(e.target.value)}>
               <option value="">Not decided</option>
               {state.users.map((u) => (
                 <option key={u.id} value={u.id}>{u.name}</option>
@@ -171,25 +204,23 @@ export default function MealForm({ init, onClose }: { init: MealFormInit; onClos
         </div>
         <div>
           <label className="label">Notes</label>
-          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
+          <input className={FIELD} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
         </div>
         {meal && meal.recipeId !== (mode === "recipe" ? recipeId || null : null) && (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Changing the dish resets everyone&apos;s agreement.</p>
         )}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-1">
-            {meal && meal.status !== "cooked" && (
-              <button type="button" className="btn-danger btn-sm" disabled={busy} onClick={remove}>Remove from plan</button>
-            )}
-            <button type="button" className="btn-ghost btn-sm" onClick={() => setDate(addDays(date, -1))}>← Day</button>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => setDate(addDays(date, 1))}>Day →</button>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-            <button className="btn-primary" disabled={busy || (mode === "recipe" ? !recipeId : !title.trim())}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col-reverse gap-2 sm:order-last sm:flex-row">
+            <button type="button" className="btn-ghost max-sm:min-h-11" onClick={onClose}>Cancel</button>
+            <button className="btn-primary max-sm:min-h-11" disabled={busy || (mode === "recipe" ? !recipeId : !title.trim())}>
               {busy ? "Saving…" : meal ? "Save" : "Add to plan"}
             </button>
           </div>
+          {meal && meal.status !== "cooked" && (
+            <button type="button" className="btn-danger max-sm:min-h-11 sm:btn-sm" disabled={busy} onClick={remove}>
+              Remove from plan
+            </button>
+          )}
         </div>
       </form>
     </Modal>

@@ -26,9 +26,9 @@ function monthTitle(firstIso: string): string {
   return fromISODate(firstIso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-type Mark = "made" | "agreed" | "proposed" | "skipped";
+export type Mark = "made" | "agreed" | "proposed" | "skipped";
 
-function markOf(meal: Meal, agreed: boolean): Mark {
+export function markOf(meal: Meal, agreed: boolean): Mark {
   if (meal.status === "cooked") return "made";
   if (meal.status === "skipped") return "skipped";
   return agreed ? "agreed" : "proposed";
@@ -49,7 +49,7 @@ function Glyph({ mark }: { mark: Mark }) {
 }
 
 /** Compact dot used on phone widths (one per meal). */
-function Dot({ mark, short }: { mark: Mark; short: boolean }) {
+export function Dot({ mark, short }: { mark: Mark; short: boolean }) {
   const base =
     mark === "made"
       ? "bg-leaf-700"
@@ -131,19 +131,19 @@ export default function MonthCalendar({
     <section className="card p-3 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-extrabold sm:text-xl">{monthTitle(month)}</h2>
-        <div className="flex flex-wrap items-center gap-1">
-          <button className="btn-outline btn-sm" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month">
+        <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto">
+          <button className="btn-outline btn-sm max-sm:min-h-10 max-sm:min-w-10 max-sm:text-base" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month">
             ‹
           </button>
-          <button className="btn-outline btn-sm" onClick={() => setMonth(thisMonth)} disabled={month === thisMonth}>
+          <button className="btn-outline btn-sm max-sm:min-h-10 max-sm:flex-1" onClick={() => setMonth(thisMonth)} disabled={month === thisMonth}>
             This month
           </button>
-          <button className="btn-outline btn-sm" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month">
+          <button className="btn-outline btn-sm max-sm:min-h-10 max-sm:min-w-10 max-sm:text-base" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month">
             ›
           </button>
           <input
             type="date"
-            className="input w-auto px-2 py-1 text-xs"
+            className="input w-auto px-2 py-1 text-xs max-sm:min-h-11 max-sm:basis-full max-sm:text-base"
             aria-label="Go to date"
             title="Go to date"
             onChange={(e) => pickFromInput(e.target.value)}
@@ -177,7 +177,7 @@ export default function MonthCalendar({
               onClick={() => onPickDate(d)}
               aria-label={label}
               aria-current={isToday ? "date" : undefined}
-              className={`flex min-h-12 min-w-0 flex-col items-stretch rounded-lg border p-1 text-left transition hover:border-leaf-500 hover:bg-leaf-50 focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:outline-none sm:min-h-24 sm:rounded-xl sm:p-1.5 ${
+              className={`flex min-h-14 min-w-0 flex-col items-stretch rounded-lg border p-1 text-left transition hover:border-leaf-500 hover:bg-leaf-50 focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:outline-none sm:min-h-24 sm:rounded-xl sm:p-1.5 ${
                 inMonth ? "border-black/5 bg-white" : "border-transparent bg-black/[0.02] opacity-50"
               } ${isToday ? "ring-2 ring-leaf-500" : ""}`}
             >

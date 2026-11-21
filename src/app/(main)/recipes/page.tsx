@@ -109,10 +109,10 @@ export default function RecipesPage() {
           <h1 className="text-2xl font-extrabold">Recipes</h1>
           <p className="text-sm text-ink/60">The meals your household makes. Ingredients here drive the fridge math.</p>
         </div>
-        <button className="btn-primary" onClick={() => setEditing("new")}>+ New recipe</button>
+        <button className="btn-primary max-sm:min-h-10" onClick={() => setEditing("new")}>+ New recipe</button>
       </div>
 
-      <div className="flex gap-1 border-b border-black/10" role="tablist">
+      <div className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_rgb(0_0_0/0.1)] [scrollbar-width:none]" role="tablist">
         {([
           ["ours", `Our recipes (${state.recipes.length})`],
           ["library", `Recipe library (${LIBRARY.length})`],
@@ -122,7 +122,7 @@ export default function RecipesPage() {
             role="tab"
             aria-selected={tab === key}
             onClick={() => setTab(key)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold ${tab === key ? "border-leaf-600 text-leaf-700" : "border-transparent text-ink/50 hover:text-ink"}`}
+            className={`shrink-0 border-b-2 px-4 py-2 text-sm font-semibold whitespace-nowrap max-sm:py-2.5 ${tab === key ? "border-leaf-600 text-leaf-700" : "border-transparent text-ink/50 hover:text-ink"}`}
           >
             {label}
           </button>
@@ -137,11 +137,15 @@ export default function RecipesPage() {
 
       {state.recipes.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <input className="input max-w-xs" placeholder="Search by name or ingredient…" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <div className="flex flex-wrap gap-1">
-            <button className={`chip px-3 py-1.5 text-xs ${!tag ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag("")}>All</button>
+          <input className="input sm:max-w-xs" placeholder="Search by name or ingredient…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="flex gap-1 max-sm:w-full max-sm:overflow-x-auto max-sm:pb-1 max-sm:[scrollbar-width:none] sm:flex-wrap">
+            <button className={`chip shrink-0 px-3 py-1.5 text-xs whitespace-nowrap max-sm:py-2 ${!tag ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag("")}>All</button>
             {tags.map((t) => (
-              <button key={t} className={`chip px-3 py-1.5 text-xs ${tag === t ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag(tag === t ? "" : t)}>
+              <button
+                key={t}
+                className={`chip shrink-0 px-3 py-1.5 text-xs whitespace-nowrap max-sm:py-2 ${tag === t ? "bg-ink text-white" : "bg-white"}`}
+                onClick={() => setTag(tag === t ? "" : t)}
+              >
                 {t}
               </button>
             ))}
@@ -155,7 +159,7 @@ export default function RecipesPage() {
           <button className="font-semibold text-leaf-700 underline" onClick={() => setTab("library")}>recipe library</button>, or ask Claude for ideas.
         </EmptyState>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((r) => {
             const missing = missingNow.get(r.id) ?? 0;
             const nutrition = currentNutrition(r);
@@ -164,7 +168,7 @@ export default function RecipesPage() {
             return (
               <button key={r.id} onClick={() => setViewing(r)} className="card p-4 text-left transition hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold">{r.name}</h3>
+                  <h3 className="min-w-0 font-bold">{r.name}</h3>
                   {missing === 0 ? (
                     <span className="chip shrink-0 bg-sky-50 text-sky-700">Can make now</span>
                   ) : (
@@ -225,7 +229,7 @@ export default function RecipesPage() {
           )}
           <div className="mt-6 flex flex-wrap justify-between gap-2">
             <button
-              className="btn-danger"
+              className="btn-danger max-sm:min-h-10"
               onClick={async () => {
                 if (!confirm(`Delete “${viewed.name}”?`)) return;
                 if (await api("DELETE", `/api/recipes/${viewed.id}`)) {
@@ -237,9 +241,9 @@ export default function RecipesPage() {
               Delete
             </button>
             <div className="flex gap-2">
-              <button className="btn-outline" onClick={() => setEditing(viewed)}>Edit</button>
+              <button className="btn-outline max-sm:min-h-10" onClick={() => setEditing(viewed)}>Edit</button>
               <button
-                className="btn-primary"
+                className="btn-primary max-sm:min-h-10"
                 onClick={() => {
                   setPlanning({ date: fc.today, slot: state.settings.mealSlots.at(-1) ?? "Dinner", recipeId: viewed.id });
                   setViewing(null);
@@ -278,7 +282,7 @@ function NutritionBlock({ recipe, hasKey, busy, onAnalyse }: { recipe: Recipe; h
         <h3 className="text-sm font-bold">Nutrition per serving (estimate)</h3>
         <button
           type="button"
-          className="btn-outline btn-sm"
+          className="btn-outline btn-sm max-sm:min-h-9"
           disabled={!hasKey || busy || recipe.ingredients.length === 0}
           title={!hasKey ? "Add a Claude API key in Admin → Settings to analyse calories" : "Ask Claude to estimate calories and macros (one request)"}
           onClick={onAnalyse}

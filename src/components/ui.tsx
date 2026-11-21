@@ -1,9 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Ingredient, Recipe } from "@/lib/types";
 import { formatAmount, titleCase } from "@/lib/units";
 
+// How many modals are open, so nested ones don't unlock page scrolling too early.
+let openModals = 0;
+let savedOverflow = "";
+
+/** Stops the page behind an open modal from scrolling; restores it when the last modal closes. */
+function useScrollLock() {
+  useEffect(() => {
+    const body = document.body;
+    if (openModals++ === 0) {
+      savedOverflow = body.style.overflow;
+      body.style.overflow = "hidden";
+    }
+    return () => {
+      if (--openModals === 0) body.style.overflow = savedOverflow;
+    };
+  }, []);
+}
+
+/** A dialog: a bottom sheet on phones, a centred card from the `sm` breakpoint up. */
 export function Modal({
   title,
   onClose,
@@ -20,21 +40,35 @@ export function Modal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-0 sm:items-center sm:p-4" onMouseDown={onClose}>
+  useScrollLock();
+  // Render at the end of <body> so no page element (e.g. the phone bottom nav) can sit on top of it.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-center overscroll-contain bg-black/30 p-0 sm:items-center sm:p-4"
+      onMouseDown={onClose}
+    >
       <div
-        className={`card max-h-[92vh] w-full overflow-y-auto rounded-b-none p-5 sm:rounded-2xl ${wide ? "sm:max-w-2xl" : "sm:max-w-md"}`}
+        className={`card flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-b-none border-b-0 sm:max-h-[92vh] sm:rounded-2xl sm:border-b ${
+          wide ? "sm:max-w-2xl" : "sm:max-w-md"
+        }`}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-label={title}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button className="btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button>
+        <div className="flex shrink-0 justify-center pt-2 sm:hidden" aria-hidden>
+          <span className="h-1.5 w-10 rounded-full bg-black/15" />
         </div>
-        {children}
+        <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-2 pb-3 sm:pt-5 sm:pb-4">
+          <h2 className="min-w-0 text-lg font-bold">{title}</h2>
+          <button type="button" className="btn-ghost btn-sm min-w-9 shrink-0" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-5">
+          {children}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -93,7 +127,7 @@ export function IngredientEditor({
       {value.map((ing, i) => (
         <div key={i} className="flex gap-2">
           <input
-            className="input w-20 shrink-0"
+            className="input w-20 shrink-0 max-sm:w-14 max-sm:px-2"
             type="number"
             min="0"
             step="any"
@@ -101,16 +135,21 @@ export function IngredientEditor({
             onChange={(e) => set(i, { quantity: parseFloat(e.target.value) })}
             aria-label="Quantity"
           />
-          <UnitInput className="w-24 shrink-0" value={ing.unit} onChange={(u) => set(i, { unit: u })} />
+          <UnitInput className="w-24 shrink-0 max-sm:w-20 max-sm:px-2" value={ing.unit} onChange={(u) => set(i, { unit: u })} />
           <input
-            className="input"
+            className="input min-w-0"
             list="ingredient-names"
             placeholder="ingredient"
             value={ing.name}
             onChange={(e) => set(i, { name: e.target.value })}
             aria-label="Ingredient name"
           />
-          <button type="button" className="btn-ghost btn-sm" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label="Remove ingredient">
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0 max-sm:px-1.5"
+            onClick={() => onChange(value.filter((_, j) => j !== i))}
+            aria-label="Remove ingredient"
+          >
             ✕
           </button>
         </div>

@@ -2,6 +2,11 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.8.0
+- **Made for phones.** Every page is tuned for a phone browser: bigger tap targets, no sideways scrolling, bottom-sheet dialogs, no zoom-in when typing, and room for the iPhone home bar. The week planner shows one day at a time on a phone with a day picker.
+- **Add to Home Screen:** Forkcast can be installed like an app (icon, full-screen, theme colour).
+- **Show password:** an eye button on the sign-in and sign-up forms reveals what you typed.
+
 ## 0.7.0
 - **Automatic calorie analysis.** Saving a recipe (or a Claude idea) gets a per-serving estimate of calories, protein, carbs and fat from Claude in the background; it's redone when ingredients change. Library recipes come with built-in estimates.
 - Meal cards show ~kcal per serving, each day shows a rough per-person total, and recipe cards and details show the numbers. Admins can analyse all older recipes at once.

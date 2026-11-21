@@ -57,11 +57,11 @@ export default function FridgePage() {
             Cooking a meal takes its ingredients out automatically. Use this page for groceries, leftovers and corrections.
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setScanning(true)}>🧾 Scan a receipt</button>
+        <button className="btn-primary max-sm:min-h-11 max-sm:w-full" onClick={() => setScanning(true)}>🧾 Scan a receipt</button>
       </div>
       {scanning && <ReceiptScanner onClose={() => setScanning(false)} />}
 
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
         <section className="space-y-3">
           <h2 className="text-lg font-bold">In the fridge</h2>
           <AddRow
@@ -134,18 +134,24 @@ function ShortfallRow({ s }: { s: Shortfall }) {
   const qty = roundUpQty(s.quantity);
   return (
     <li className="flex flex-wrap items-center gap-2 py-2 text-sm">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 max-sm:basis-full">
         <b>{formatAmount(qty, s.unit)}</b> {titleCase(s.name)}
         <p className="text-xs text-ink/50">
           by {dayName(s.neededBy)} {shortDate(s.neededBy)} · {s.meals.join(", ")}
         </p>
       </div>
-      <input className="input w-36 py-1 text-xs" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Shopping day" />
-      <button className="btn-outline btn-sm" onClick={() => api("POST", "/api/shopping", { name: s.name, quantity: qty, unit: s.unit, plannedDate: date })}>
+      <input
+        className="input w-36 py-1 text-xs max-sm:h-10 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        aria-label="Shopping day"
+      />
+      <button className="btn-outline btn-sm max-sm:h-10 max-sm:px-3" onClick={() => api("POST", "/api/shopping", { name: s.name, quantity: qty, unit: s.unit, plannedDate: date })}>
         + List
       </button>
       <button
-        className="btn-ghost btn-sm"
+        className="btn-ghost btn-sm max-sm:h-10 max-sm:px-3"
         title="Already bought it — put it in the fridge"
         onClick={async () => {
           if (await api("POST", "/api/fridge", { name: s.name, quantity: qty, unit: s.unit })) toast(`${titleCase(s.name)} added to the fridge.`);
@@ -163,12 +169,12 @@ function ShoppingRow({ item, addedBy }: { item: ShoppingItem; addedBy: string })
   const late = item.plannedDate !== null && item.plannedDate < fc.today;
   return (
     <li className="flex flex-wrap items-center gap-2 py-2 text-sm">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 max-sm:basis-full">
         <b>{formatAmount(item.quantity, item.unit)}</b> {titleCase(item.name)}
         <p className="text-xs text-ink/50">added by {addedBy}</p>
       </div>
       <input
-        className={`input w-36 py-1 text-xs ${late ? "border-amber-400" : ""}`}
+        className={`input w-36 py-1 text-xs max-sm:h-10 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1 ${late ? "border-amber-400" : ""}`}
         type="date"
         value={item.plannedDate ?? ""}
         onChange={(e) => api("PUT", `/api/shopping/${item.id}`, { plannedDate: e.target.value || null })}
@@ -176,14 +182,14 @@ function ShoppingRow({ item, addedBy }: { item: ShoppingItem; addedBy: string })
         title={late ? "This day has passed — still not bought?" : "Shopping day"}
       />
       <button
-        className="btn-primary btn-sm"
+        className="btn-primary btn-sm max-sm:h-10 max-sm:px-3"
         onClick={async () => {
           if (await api("DELETE", `/api/shopping/${item.id}?bought=1`)) toast(`${titleCase(item.name)} is in the fridge now.`);
         }}
       >
         ✓ Bought
       </button>
-      <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/shopping/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
+      <button className="btn-ghost btn-sm max-sm:h-10 max-sm:w-10" onClick={() => api("DELETE", `/api/shopping/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
     </li>
   );
 }
@@ -196,7 +202,7 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
   const save = (q: number) => api("PUT", `/api/fridge/${item.id}`, { quantity: Math.max(0, q) });
   return (
     <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 max-sm:basis-full">
         <p className="font-semibold">{titleCase(item.name)}</p>
         <p className="text-xs text-ink/50">
           {planned > 0 ? (
@@ -209,10 +215,10 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
           · {updatedBy}
         </p>
       </div>
-      <div className="flex items-center gap-1">
-        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity - step)} aria-label={`Less ${titleCase(item.name)}`}>−</button>
+      <div className="flex items-center gap-1 max-sm:w-full">
+        <button className="btn-outline btn-sm w-7 max-sm:h-10 max-sm:w-10 max-sm:text-base" onClick={() => save(item.quantity - step)} aria-label={`Less ${titleCase(item.name)}`}>−</button>
         <input
-          className="input w-20 py-1 text-center"
+          className="input w-20 py-1 text-center max-sm:h-10"
           type="number"
           min={0}
           step="any"
@@ -222,9 +228,9 @@ function FridgeRow({ item, planned, updatedBy }: { item: FridgeItem; planned: nu
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
           aria-label={`${titleCase(item.name)} quantity`}
         />
-        <button className="btn-outline btn-sm w-7" onClick={() => save(item.quantity + step)} aria-label={`More ${titleCase(item.name)}`}>+</button>
-        <span className="w-10 text-xs text-ink/60">{item.unit}</span>
-        <button className="btn-ghost btn-sm" onClick={() => api("DELETE", `/api/fridge/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
+        <button className="btn-outline btn-sm w-7 max-sm:h-10 max-sm:w-10 max-sm:text-base" onClick={() => save(item.quantity + step)} aria-label={`More ${titleCase(item.name)}`}>+</button>
+        <span className="w-10 text-xs text-ink/60 max-sm:pl-1">{item.unit}</span>
+        <button className="btn-ghost btn-sm max-sm:ml-auto max-sm:h-10 max-sm:w-10" onClick={() => api("DELETE", `/api/fridge/${item.id}`)} aria-label={`Remove ${titleCase(item.name)}`}>✕</button>
       </div>
     </div>
   );
@@ -246,7 +252,7 @@ function AddRow({
   const [date, setDate] = useState("");
   return (
     <form
-      className="flex flex-wrap gap-2"
+      className="grid grid-cols-[4.5rem_5.5rem_minmax(0,1fr)] gap-2 sm:flex sm:flex-wrap"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!name.trim()) return;
@@ -255,11 +261,13 @@ function AddRow({
         setQuantity("1");
       }}
     >
-      <input className="input w-20" type="number" min="0" step="any" value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-label="Quantity" />
-      <UnitInput className="w-24" value={unit} onChange={setUnit} />
-      <input className="input min-w-32 flex-1" list="ingredient-names" placeholder="item" value={name} onChange={(e) => setName(e.target.value)} aria-label="Item" />
-      {withDate && <input className="input w-36" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Shopping day" />}
-      <button className="btn-primary">{cta}</button>
+      <input className="input w-20 max-sm:w-full" type="number" min="0" step="any" value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-label="Quantity" />
+      <UnitInput className="w-24 max-sm:w-full" value={unit} onChange={setUnit} />
+      <input className="input col-span-3 -order-1 min-w-32 flex-1 sm:order-none" list="ingredient-names" placeholder="item" value={name} onChange={(e) => setName(e.target.value)} aria-label="Item" />
+      {withDate && (
+        <input className="input w-36 max-sm:w-full max-sm:min-w-0 max-sm:px-2" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Shopping day" />
+      )}
+      <button className={`btn-primary max-sm:min-h-10 ${withDate ? "col-span-3" : ""}`}>{cta}</button>
     </form>
   );
 }

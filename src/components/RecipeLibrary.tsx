@@ -63,19 +63,23 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg bg-black/5 p-1 text-sm font-semibold">
+        <div className="flex rounded-lg bg-black/5 p-1 text-sm font-semibold max-sm:w-full">
           {(["all", "lunch", "dinner"] as const).map((m) => (
-            <button key={m} onClick={() => setMeal(m)} className={`rounded-md px-3 py-1.5 capitalize ${meal === m ? "bg-white shadow-sm" : "text-ink/60"}`}>
+            <button key={m} onClick={() => setMeal(m)} className={`rounded-md px-3 py-1.5 capitalize max-sm:flex-1 max-sm:py-2 ${meal === m ? "bg-white shadow-sm" : "text-ink/60"}`}>
               {m === "all" ? "All" : m}
             </button>
           ))}
         </div>
-        <input className="input max-w-xs" placeholder="Search by name or ingredient…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input className="input sm:max-w-xs" placeholder="Search by name or ingredient…" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
-      <div className="flex flex-wrap gap-1">
-        <button className={`chip px-3 py-1.5 text-xs ${!tag ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag("")}>Any</button>
+      <div className="flex gap-1 max-sm:overflow-x-auto max-sm:pb-1 max-sm:[scrollbar-width:none] sm:flex-wrap">
+        <button className={`chip shrink-0 px-3 py-1.5 text-xs whitespace-nowrap max-sm:py-2 ${!tag ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag("")}>Any</button>
         {tags.map((t) => (
-          <button key={t} className={`chip px-3 py-1.5 text-xs ${tag === t ? "bg-ink text-white" : "bg-white"}`} onClick={() => setTag(tag === t ? "" : t)}>
+          <button
+            key={t}
+            className={`chip shrink-0 px-3 py-1.5 text-xs whitespace-nowrap max-sm:py-2 ${tag === t ? "bg-ink text-white" : "bg-white"}`}
+            onClick={() => setTag(tag === t ? "" : t)}
+          >
             {t}
           </button>
         ))}
@@ -84,7 +88,7 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
         {shown.length} easy, healthy recipes. Ones you can make with what&apos;s in the fridge come first. Adding one copies it into your recipes, sized for {householdSize}.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((r) => {
           const miss = missing.get(r.id) ?? 0;
           const isAdded = added.has(r.id);
@@ -92,7 +96,7 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
             <article key={r.id} className="card flex flex-col p-4">
               <button className="text-left" onClick={() => setOpen(r)}>
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold hover:text-leaf-700">{r.name}</h3>
+                  <h3 className="min-w-0 font-bold hover:text-leaf-700">{r.name}</h3>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <span className="chip bg-black/5 text-ink/60">{r.minutes} min</span>
                     {r.nutrition && (
@@ -116,10 +120,10 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
                 ))}
               </div>
               <div className="mt-auto flex gap-2 pt-3">
-                <button className={isAdded ? "btn-outline btn-sm flex-1" : "btn-primary btn-sm flex-1"} disabled={busy || isAdded} onClick={() => add(r, false)}>
+                <button className={`${isAdded ? "btn-outline" : "btn-primary"} btn-sm flex-1 max-sm:min-h-10 max-sm:text-sm`} disabled={busy || isAdded} onClick={() => add(r, false)}>
                   {isAdded ? "✓ In our recipes" : "+ Add to our recipes"}
                 </button>
-                <button className="btn-ghost btn-sm" onClick={() => setOpen(r)}>View</button>
+                <button className="btn-ghost btn-sm max-sm:min-h-10 max-sm:px-3 max-sm:text-sm" onClick={() => setOpen(r)}>View</button>
               </div>
             </article>
           );
@@ -165,11 +169,11 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
           </div>
           <div className="mt-6 flex flex-wrap justify-end gap-2">
             {added.has(open.id) ? (
-              <span className="btn text-leaf-700">✓ In our recipes</span>
+              <span className="btn text-leaf-700 max-sm:min-h-10 max-sm:flex-1">✓ In our recipes</span>
             ) : (
-              <button className="btn-outline" disabled={busy} onClick={() => add(open, false)}>+ Add to our recipes</button>
+              <button className="btn-outline max-sm:min-h-10 max-sm:flex-1" disabled={busy} onClick={() => add(open, false)}>+ Add to our recipes</button>
             )}
-            <button className="btn-primary" disabled={busy} onClick={() => add(open, true)}>
+            <button className="btn-primary max-sm:min-h-10 max-sm:flex-1" disabled={busy} onClick={() => add(open, true)}>
               {added.has(open.id) ? "Add to plan" : "Add & plan it"}
             </button>
           </div>

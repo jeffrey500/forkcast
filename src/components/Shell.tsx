@@ -8,75 +8,155 @@ import { logout, useApp } from "./AppProvider";
 import { APP_NAME } from "@/lib/types";
 import { APP_VERSION } from "@/lib/version";
 
-const NAV = [
-  { href: "/", label: "Week", icon: "📅" },
-  { href: "/fridge", label: "Fridge & shopping", icon: "🧊" },
-  { href: "/recipes", label: "Recipes", icon: "📖" },
-  { href: "/ideas", label: "Ask Claude", icon: "✨" },
+type NavItem = { href: string; label: string; short: string; icon: React.ReactNode };
+
+/** 24×24 line icons; they take the link's text colour so the active tab is tinted. */
+function NavIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
+
+const NAV: NavItem[] = [
+  {
+    href: "/",
+    label: "Week",
+    short: "Week",
+    icon: (
+      <NavIcon>
+        <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+        <path d="M3.5 10h17M8 3v4M16 3v4" />
+      </NavIcon>
+    ),
+  },
+  {
+    href: "/fridge",
+    label: "Fridge & shopping",
+    short: "Fridge",
+    icon: (
+      <NavIcon>
+        <rect x="5.5" y="2.5" width="13" height="19" rx="2.5" />
+        <path d="M5.5 10h13M9 6v1.5M9 13v3" />
+      </NavIcon>
+    ),
+  },
+  {
+    href: "/recipes",
+    label: "Recipes",
+    short: "Recipes",
+    icon: (
+      <NavIcon>
+        <path d="M12 6.5C10 5 7 4.5 3.5 5v13.5c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z" />
+        <path d="M12 6.5V20" />
+      </NavIcon>
+    ),
+  },
+  {
+    href: "/ideas",
+    label: "Ask Claude",
+    short: "Ask",
+    icon: (
+      <NavIcon>
+        <path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z" />
+        <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+      </NavIcon>
+    ),
+  },
 ];
+
+const ADMIN: NavItem = {
+  href: "/admin",
+  label: "Admin",
+  short: "Admin",
+  icon: (
+    <NavIcon>
+      <circle cx="8" cy="15" r="4.5" />
+      <path d="M11.2 11.8L20 3M16.5 6.5l2.5 2.5M14 9l2 2" />
+    </NavIcon>
+  ),
+};
+
+const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const { state } = useApp();
   const [profileOpen, setProfileOpen] = useState(false);
   const path = usePathname();
-  const nav = state.me.role === "admin" ? [...NAV, { href: "/admin", label: "Admin", icon: "🔑" }] : NAV;
+  const nav = state.me.role === "admin" ? [...NAV, ADMIN] : NAV;
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-black/5 bg-paper/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
+      <header className="pt-safe sticky top-0 z-30 border-b border-black/5 bg-paper/90 backdrop-blur">
+        <div className="px-safe mx-auto flex max-w-7xl items-center gap-2 py-2 sm:gap-3 sm:py-3">
+          <Link href="/" className="flex min-w-0 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
-            <img src="/logo.svg" alt="" width={34} height={34} className="h-[34px] w-[34px] drop-shadow-sm" />
-            <span className="leading-tight">
+            <img src="/logo.svg" alt="" width={34} height={34} className="h-[30px] w-[30px] shrink-0 drop-shadow-sm sm:h-[34px] sm:w-[34px]" />
+            <span className="min-w-0 leading-tight">
               <span className="block text-sm font-extrabold">{APP_NAME}</span>
-              <span className="block text-[11px] text-ink/50">{state.settings.householdName}</span>
+              <span className="block truncate text-[11px] text-ink/50">{state.settings.householdName}</span>
             </span>
           </Link>
-          <nav className="ml-4 hidden gap-1 md:flex">
+          <nav className="ml-4 hidden gap-1 md:flex" aria-label="Main">
             {nav.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
+                aria-current={isActive(path, n.href) ? "page" : undefined}
                 className={`rounded-lg px-3 py-2 text-sm font-semibold ${
-                  path === n.href ? "bg-white text-leaf-700 shadow-sm" : "text-ink/70 hover:bg-black/5"
+                  isActive(path, n.href) ? "bg-white text-leaf-700 shadow-sm" : "text-ink/70 hover:bg-black/5"
                 }`}
               >
                 {n.label}
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             <button
-              className="btn-ghost btn-sm max-w-40 truncate"
+              className="btn-ghost btn-sm max-w-40 min-w-9 truncate"
               onClick={() => setProfileOpen(true)}
               title="Your profile"
               aria-label={`Your profile (${state.me.name})`}
             >
               <span aria-hidden>👤</span> <span className="hidden truncate sm:inline">{state.me.name}</span>
             </button>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <button className="btn-ghost btn-sm whitespace-nowrap" onClick={logout}>Sign out</button>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 pt-6 pb-6">{children}</main>
-      <footer className="mx-auto max-w-7xl px-4 pb-28 text-xs text-ink/40 md:pb-8">
+      <main className="px-safe mx-auto max-w-7xl pt-4 pb-6 sm:pt-6">{children}</main>
+      <footer className="px-safe pb-nav mx-auto max-w-7xl text-xs text-ink/40 md:pb-8">
         {APP_NAME} v{APP_VERSION}
       </footer>
       {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-black/10 bg-white md:hidden">
-        {nav.map((n) => (
-          <Link
-            key={n.href}
-            href={n.href}
-            className={`flex flex-1 flex-col items-center py-2 text-[11px] font-semibold ${
-              path === n.href ? "text-leaf-700" : "text-ink/60"
-            }`}
-          >
-            <span className="text-lg">{n.icon}</span>
-            {n.label.split(" ")[0]}
-          </Link>
-        ))}
+      <nav
+        className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 backdrop-blur md:hidden"
+        aria-label="Main"
+      >
+        <div className="px-safe flex">
+          {nav.map((n) => {
+            const active = isActive(path, n.href);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                aria-current={active ? "page" : undefined}
+                aria-label={n.label}
+                className={`relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1 text-[11px] font-semibold transition-colors ${
+                  active ? "text-leaf-700" : "text-ink/55 active:text-ink"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-leaf-600 transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+                />
+                {n.icon}
+                <span className="max-w-full truncate">{n.short}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

@@ -101,7 +101,7 @@ export default function IdeasPage() {
         </div>
       )}
 
-      <form onSubmit={ask} className="card space-y-4 p-5">
+      <form onSubmit={ask} className="card space-y-4 p-4 sm:p-5">
         <textarea
           className="input min-h-24 text-base"
           placeholder="e.g. something with the leftover chicken, nothing too spicy"
@@ -110,19 +110,19 @@ export default function IdeasPage() {
         />
         <div className="flex flex-wrap gap-1.5">
           {PROMPTS.map((p) => (
-            <button type="button" key={p} className="chip bg-black/5 px-3 py-1.5 text-xs hover:bg-leaf-100" onClick={() => setPrompt(p)}>
+            <button type="button" key={p} className="chip bg-black/5 px-3 py-1.5 text-left text-xs hover:bg-leaf-100 max-sm:py-2" onClick={() => setPrompt(p)}>
               {p}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={useFridge} onChange={(e) => setUseFridge(e.target.checked)} className="h-4 w-4 accent-leaf-600" />
+        <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap sm:gap-4">
+          <label className="col-span-2 flex items-center gap-2 text-sm font-medium max-sm:min-h-10">
+            <input type="checkbox" checked={useFridge} onChange={(e) => setUseFridge(e.target.checked)} className="h-5 w-5 shrink-0 accent-leaf-600 sm:h-4 sm:w-4" />
             Use what&apos;s in our fridge ({state.fridge.length} items)
           </label>
           <div>
             <label className="label">Ideas</label>
-            <select className="input w-20" value={count} onChange={(e) => setCount(parseInt(e.target.value))}>
+            <select className="input w-20 max-sm:w-full" value={count} onChange={(e) => setCount(parseInt(e.target.value))}>
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <option key={n}>{n}</option>
               ))}
@@ -130,9 +130,9 @@ export default function IdeasPage() {
           </div>
           <div>
             <label className="label">Servings</label>
-            <input className="input w-20" type="number" min={1} max={12} value={servings} onChange={(e) => setServings(parseInt(e.target.value) || 1)} />
+            <input className="input w-20 max-sm:w-full" type="number" min={1} max={12} value={servings} onChange={(e) => setServings(parseInt(e.target.value) || 1)} />
           </div>
-          <button className="btn-primary ml-auto" disabled={busy || noKey}>
+          <button className="btn-primary col-span-2 max-sm:min-h-11 sm:ml-auto" disabled={busy || noKey}>
             {busy ? "Thinking…" : "✨ Get ideas"}
           </button>
         </div>
@@ -141,11 +141,11 @@ export default function IdeasPage() {
 
       {busy && <p className="text-center text-sm text-ink/50">Claude is cooking up some ideas — this can take a little while…</p>}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {ideas.map((idea) => (
-          <article key={idea.name} className="card flex flex-col p-5">
+          <article key={idea.name} className="card flex flex-col p-4 sm:p-5">
             <div className="flex items-start justify-between gap-2">
-              <h2 className="text-lg font-bold">{idea.name}</h2>
+              <h2 className="min-w-0 text-lg font-bold">{idea.name}</h2>
               <span className="chip shrink-0 bg-black/5 text-ink/60">{idea.prepMinutes} min</span>
             </div>
             <p className="mt-1 text-sm text-ink/70">{idea.description}</p>
@@ -176,7 +176,7 @@ export default function IdeasPage() {
               <p className="mt-2 whitespace-pre-wrap text-ink/80">{idea.instructions}</p>
             </details>
             <div className="mt-auto pt-4">
-              <button className="btn-primary w-full" disabled={saved.has(idea.name)} onClick={() => save(idea)}>
+              <button className="btn-primary w-full max-sm:min-h-11" disabled={saved.has(idea.name)} onClick={() => save(idea)}>
                 {saved.has(idea.name) ? "✓ Saved to recipes" : "Save as recipe"}
               </button>
             </div>

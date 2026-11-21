@@ -150,9 +150,9 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          <div className="flex justify-end gap-2">
-            <button className="btn-ghost" onClick={onClose}>Cancel</button>
-            <button className="btn-primary" disabled={!file} onClick={scan}>Scan receipt</button>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <button className="btn-ghost max-sm:min-h-11" onClick={onClose}>Cancel</button>
+            <button className="btn-primary max-sm:min-h-11" disabled={!file} onClick={scan}>Scan receipt</button>
           </div>
         </div>
       )}
@@ -171,16 +171,19 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
           </p>
           <ul className="divide-y divide-black/5 rounded-xl border border-black/10">
             {rows.map((r, i) => (
-              <li key={i} className={`flex flex-wrap items-center gap-2 px-3 py-2 ${r.include ? "" : "opacity-50"}`}>
+              <li
+                key={i}
+                className={`grid grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 px-3 py-2.5 sm:flex sm:flex-wrap sm:py-2 ${r.include ? "" : "opacity-50"}`}
+              >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-leaf-600"
+                  className="h-5 w-5 accent-leaf-600 sm:h-4 sm:w-4"
                   checked={r.include}
                   onChange={(e) => set(i, { include: e.target.checked })}
                   aria-label={`Include ${r.name}`}
                 />
                 <input
-                  className="input w-20 py-1"
+                  className="input col-start-2 w-20 py-1 max-sm:w-full"
                   type="number"
                   min="0"
                   step="any"
@@ -188,9 +191,9 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
                   onChange={(e) => set(i, { quantity: parseFloat(e.target.value) })}
                   aria-label="Quantity"
                 />
-                <UnitInput className="w-20 py-1" value={r.unit} onChange={(u) => set(i, { unit: u })} />
-                <input className="input min-w-32 flex-1 py-1" value={r.name} onChange={(e) => set(i, { name: e.target.value })} aria-label="Item" />
-                <div className="flex w-full flex-wrap items-center gap-1 pl-6 text-[11px]">
+                <UnitInput className="w-20 py-1 max-sm:w-full" value={r.unit} onChange={(u) => set(i, { unit: u })} />
+                <input className="input col-span-2 col-start-2 row-start-1 min-w-32 flex-1 py-1 font-semibold sm:font-normal" value={r.name} onChange={(e) => set(i, { name: e.target.value })} aria-label="Item" />
+                <div className="col-span-3 flex w-full min-w-0 flex-wrap items-center gap-1 pl-7 text-[11px] sm:pl-6">
                   {r.match.kind === "shopping" && <span className="chip bg-leaf-100 text-leaf-700">✓ On shopping list</span>}
                   {r.match.kind === "known" && <span className="chip bg-sky-50 text-sky-700">Matches “{titleCase(r.match.label)}”</span>}
                   {r.match.kind === "new" && <span className="chip bg-black/5 text-ink/60">New item</span>}
@@ -202,9 +205,9 @@ export default function ReceiptScanner({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
           {ignored.length > 0 && <p className="text-xs text-ink/50">Skipped: {ignored.join(", ")}</p>}
-          <div className="flex flex-wrap justify-between gap-2">
-            <button className="btn-ghost" onClick={() => setStep("pick")}>← Scan again</button>
-            <button className="btn-primary" disabled={busy || chosen.length === 0} onClick={stock}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-between">
+            <button className="btn-ghost max-sm:min-h-11" onClick={() => setStep("pick")}>← Scan again</button>
+            <button className="btn-primary max-sm:min-h-11" disabled={busy || chosen.length === 0} onClick={stock}>
               {busy ? "Stocking…" : `Add ${chosen.length} item(s) to the fridge`}
             </button>
           </div>

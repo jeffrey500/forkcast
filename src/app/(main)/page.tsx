@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useApp } from "@/components/AppProvider";
 import MealForm, { type MealFormInit } from "@/components/MealForm";
-import MonthCalendar from "@/components/MonthCalendar";
+import MonthCalendar, { Dot, markOf } from "@/components/MonthCalendar";
 import { useForecast } from "@/components/useForecast";
 import { IngredientList, Modal } from "@/components/ui";
 import { addDays, DAY_NAMES, dayName, fromISODate, shortDate, weekDays, weekLabel, weekStart } from "@/lib/dates";
@@ -24,8 +24,13 @@ export default function WeekPage() {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [shopDate, setShopDate] = useState(fc.today);
   const [statList, setStatList] = useState<StatKind | null>(null);
+  // Phones show one day at a time; this is the day the user tapped (if it's in the shown week).
+  const [pickedDay, setPickedDay] = useState<string | null>(null);
+  const stickyTop = useStickyHeaderHeight();
+  const swipe = useRef<{ x: number; y: number } | null>(null);
 
   const days = weekDays(start);
+  const selectedDay = pickedDay && days.includes(pickedDay) ? pickedDay : days.includes(fc.today) ? fc.today : days[0];
   const nextWeek = addDays(thisWeek, 7);
   const isPlanningDay = fromISODate(fc.today).getDay() === settings.planningDay;
   const weekMeals = state.meals.filter((m) => m.date >= start && m.date <= days[6]);
@@ -47,6 +52,23 @@ export default function WeekPage() {
     cooked: sortedWeekMeals.filter((m) => m.status === "cooked"),
   };
   const nextWeekMeals = state.meals.filter((m) => m.date >= nextWeek && m.date <= addDays(nextWeek, 6)).length;
+
+  /** Step the phone day view by one day, crossing into the neighbouring week at the edges. */
+  function stepDay(n: 1 | -1) {
+    const next = addDays(selectedDay, n);
+    if (!days.includes(next)) setStart(addDays(start, 7 * n));
+    setPickedDay(next);
+  }
+
+  function onSwipeEnd(e: React.TouchEvent) {
+    const s = swipe.current;
+    swipe.current = null;
+    const t = e.changedTouches[0];
+    if (!s || !t) return;
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) stepDay(dx < 0 ? 1 : -1);
+  }
 
   async function onDrop(e: React.DragEvent, date: string, slot: string) {
     e.preventDefault();
@@ -82,7 +104,7 @@ export default function WeekPage() {
   return (
     <div className="space-y-6">
       {isPlanningDay && start !== nextWeek && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-leaf-600 px-5 py-4 text-white shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-leaf-600 px-4 py-4 text-white shadow-sm sm:px-5">
           <span className="text-2xl">🗳️</span>
           <div className="flex-1">
             <p className="font-bold">It&apos;s {DAY_NAMES[settings.planningDay]} — planning day!</p>
@@ -91,20 +113,20 @@ export default function WeekPage() {
               {nextWeekMeals ? `${nextWeekMeals} meal(s) proposed so far.` : "Nothing proposed yet."}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             {canRepeatNext > 0 && (
-              <button className="btn border border-white/40 text-white hover:bg-white/10" onClick={() => repeatLastWeek(nextWeek)}>
+              <button className="btn flex-1 border border-white/40 text-white hover:bg-white/10 max-sm:min-h-10 sm:flex-none" onClick={() => repeatLastWeek(nextWeek)}>
                 ↻ Repeat this week
               </button>
             )}
-            <button className="btn bg-white text-leaf-700 hover:bg-white/90" onClick={() => setStart(nextWeek)}>
+            <button className="btn flex-1 bg-white text-leaf-700 hover:bg-white/90 max-sm:min-h-10 sm:flex-none" onClick={() => setStart(nextWeek)}>
               Plan next week →
             </button>
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-ink/50">
             {view === "month"
@@ -119,34 +141,47 @@ export default function WeekPage() {
           </p>
           <h1 className="text-2xl font-extrabold">{view === "month" ? "Pick a day" : weekLabel(start)}</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <div className="mr-1 flex rounded-lg bg-black/5 p-1 text-sm font-semibold" role="tablist" aria-label="Planner view">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1">
+          <div className="grid grid-cols-2 rounded-lg bg-black/5 p-1 text-sm font-semibold sm:mr-1 sm:flex" role="tablist" aria-label="Planner view">
             {(["week", "month"] as const).map((v) => (
               <button
                 key={v}
                 role="tab"
                 aria-selected={view === v}
                 onClick={() => setView(v)}
-                className={`rounded-md px-3 py-1 ${view === v ? "bg-white shadow-sm" : "text-ink/60 hover:text-ink"}`}
+                className={`rounded-md px-3 py-1 max-sm:min-h-9 ${view === v ? "bg-white shadow-sm" : "text-ink/60 hover:text-ink"}`}
               >
                 {v === "week" ? "Week" : "Month"}
               </button>
             ))}
           </div>
-          {view === "week" && (<>
-          {canRepeat > 0 && (
-            <button
-              className="btn-outline"
-              onClick={() => repeatLastWeek(start)}
-              title="Copy last week's meals into this week's empty slots"
-            >
-              ↻ Repeat last week ({canRepeat})
-            </button>
+          {view === "week" && (
+            <div className="flex items-center gap-1">
+              {canRepeat > 0 && (
+                <button
+                  className="btn-outline min-w-0 flex-1 max-sm:min-h-10 sm:flex-none"
+                  onClick={() => repeatLastWeek(start)}
+                  title="Copy last week's meals into this week's empty slots"
+                >
+                  <span className="truncate">
+                    ↻ Repeat<span className="hidden sm:inline"> last week</span> ({canRepeat})
+                  </span>
+                </button>
+              )}
+              <button className="btn-outline max-sm:min-h-10 max-sm:min-w-10 max-sm:px-2" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week" title="Previous week">←</button>
+              <button
+                className={`btn-outline max-sm:min-h-10 ${canRepeat > 0 ? "" : "max-sm:flex-1"}`}
+                onClick={() => {
+                  setStart(thisWeek);
+                  setPickedDay(fc.today);
+                }}
+                disabled={start === thisWeek && selectedDay === fc.today}
+              >
+                Today
+              </button>
+              <button className="btn-outline max-sm:min-h-10 max-sm:min-w-10 max-sm:px-2" onClick={() => setStart(addDays(start, 7))} aria-label="Next week" title="Next week">→</button>
+            </div>
           )}
-          <button className="btn-outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">←</button>
-          <button className="btn-outline" onClick={() => setStart(thisWeek)} disabled={start === thisWeek}>Today</button>
-          <button className="btn-outline" onClick={() => setStart(addDays(start, 7))} aria-label="Next week">→</button>
-          </>)}
         </div>
       </div>
 
@@ -155,6 +190,7 @@ export default function WeekPage() {
           initialDate={start}
           onPickDate={(iso) => {
             setStart(weekStart(iso, settings.weekStartDay));
+            setPickedDay(iso);
             setView("week");
           }}
         />
@@ -162,23 +198,80 @@ export default function WeekPage() {
 
       {view === "week" && (<>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         <Stat label={STAT_LABEL.planned} value={statMeals.planned.length} onClick={() => setStatList("planned")} />
         <Stat label={STAT_LABEL.votes} value={pendingAgree} tone={pendingAgree ? "amber" : undefined} onClick={() => setStatList("votes")} />
         <Stat label={STAT_LABEL.short} value={shortCount} tone={shortCount ? "red" : undefined} onClick={() => setStatList("short")} />
         <Stat label={STAT_LABEL.cooked} value={statMeals.cooked.length} tone="leaf" onClick={() => setStatList("cooked")} />
       </div>
+      {/* Phones: pick one day at a time. */}
+      <nav
+        aria-label="Pick a day"
+        className="sticky z-20 -mx-4 bg-paper/95 px-4 py-2 backdrop-blur sm:hidden"
+        style={{ top: stickyTop }}
+      >
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((d) => {
+            const isToday = d === fc.today;
+            const selected = d === selectedDay;
+            const meals = weekMeals.filter((m) => m.date === d).sort((a, b) => slotOrder(a.slot) - slotOrder(b.slot));
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setPickedDay(d)}
+                aria-pressed={selected}
+                aria-current={isToday ? "date" : undefined}
+                aria-label={`${dayName(d)}, ${shortDate(d)}${isToday ? " (today)" : ""}: ${
+                  meals.length ? `${meals.length} meal${meals.length === 1 ? "" : "s"}` : "no meals"
+                }`}
+                className={`flex min-h-16 min-w-0 flex-col items-center justify-start gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1 transition ${
+                  selected ? "border-leaf-500 bg-white shadow-sm ring-1 ring-leaf-500" : "border-transparent bg-white/60 active:bg-white"
+                } ${d < fc.today && !selected ? "opacity-70" : ""}`}
+              >
+                <span className={`text-[11px] font-semibold uppercase ${selected || isToday ? "text-leaf-700" : "text-ink/50"}`}>
+                  {dayName(d).slice(0, 3)}
+                </span>
+                <span
+                  className={`flex size-7 items-center justify-center rounded-full text-sm font-bold ${
+                    isToday ? "bg-leaf-600 text-white" : selected ? "text-leaf-700" : "text-ink/80"
+                  }`}
+                >
+                  {fromISODate(d).getDate()}
+                </span>
+                <span className="flex h-1.5 items-center gap-0.5" aria-hidden>
+                  {meals.slice(0, 4).map((m) => (
+                    <Dot key={m.id} mark={markOf(m, fc.isAgreed(m))} short={m.status === "planned" && fc.byMeal.get(m.id)?.readiness === "short"} />
+                  ))}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+      <div
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7"
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          swipe.current = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+        }}
+        onTouchEnd={onSwipeEnd}
+      >
         {days.map((d) => {
           const isToday = d === fc.today;
           const dayKcal = dayKcalPerPerson(weekMeals.filter((m) => m.date === d), state.recipes);
           return (
-            <section key={d} className={`card flex flex-col p-3 ${isToday ? "ring-2 ring-leaf-500" : ""} ${d < fc.today ? "opacity-80" : ""}`}>
+            <section
+              key={d}
+              className={`card flex-col p-3 ${d === selectedDay ? "flex" : "hidden sm:flex"} ${isToday ? "ring-2 ring-leaf-500" : ""} ${
+                d < fc.today ? "opacity-80" : ""
+              }`}
+            >
               <header className="mb-2 flex items-baseline justify-between gap-2">
                 <h2 className="font-bold">
-                  {dayName(d).slice(0, 3)}
+                  <span className="sm:hidden">{dayName(d)}</span>
+                  <span className="hidden sm:inline">{dayName(d).slice(0, 3)}</span>
                   {isToday && <span className="chip ml-1.5 bg-leaf-100 text-leaf-700">Today</span>}
                 </h2>
                 <div className="text-right">
@@ -218,7 +311,7 @@ export default function WeekPage() {
                           <MealCard key={m.id} meal={m} forecast={fc.byMeal.get(m.id)} onEdit={() => setForm({ meal: m, date: m.date, slot: m.slot })} />
                         ))}
                         <button
-                          className="w-full rounded-lg px-2 py-1 text-left text-xs font-semibold text-ink/40 hover:bg-black/5 hover:text-leaf-700"
+                          className="w-full rounded-lg px-2 py-1 text-left text-xs font-semibold text-ink/40 hover:bg-black/5 hover:text-leaf-700 max-sm:py-2.5 max-sm:text-sm pointer-coarse:min-h-10"
                           onClick={() => setForm({ date: d, slot })}
                         >
                           + Add
@@ -232,9 +325,12 @@ export default function WeekPage() {
           );
         })}
       </div>
-      <p className="text-xs text-ink/50">Tip: drag a meal onto another day or slot to move it.</p>
+      <p className="hidden text-xs text-ink/50 sm:pointer-fine:block">Tip: drag a meal onto another day or slot to move it.</p>
+      <p className="text-xs text-ink/50 sm:pointer-fine:hidden">
+        <span className="sm:hidden">Swipe or tap a day above to switch days. </span>Tap a meal&apos;s name to change it or move it to another day.
+      </p>
 
-      <section className="card p-5">
+      <section className="card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold">What we&apos;re missing</h2>
@@ -243,12 +339,12 @@ export default function WeekPage() {
             </p>
           </div>
           {weekShortfalls.length > 0 && (
-            <div className="flex items-end gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
               <div>
-                <label className="label">Shopping on</label>
-                <input className="input" type="date" value={shopDate} onChange={(e) => setShopDate(e.target.value)} />
+                <label className="label" htmlFor="shop-date">Shopping on</label>
+                <input id="shop-date" className="input max-sm:min-h-11 max-sm:text-base" type="date" value={shopDate} onChange={(e) => setShopDate(e.target.value)} />
               </div>
-              <button className="btn-primary" onClick={addShortfallsToList}>Add all to list</button>
+              <button className="btn-primary max-sm:min-h-11" onClick={addShortfallsToList}>Add all to list</button>
             </div>
           )}
         </div>
@@ -259,8 +355,8 @@ export default function WeekPage() {
         ) : (
           <ul className="mt-4 divide-y divide-black/5">
             {weekShortfalls.map((s) => (
-              <li key={`${s.name}|${s.unit}`} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                <span>
+              <li key={`${s.name}|${s.unit}`} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 py-2 text-sm">
+                <span className="min-w-0">
                   <b>{formatAmount(s.quantity, s.unit)}</b> {titleCase(s.name)}
                   <span className="ml-2 text-xs text-ink/50">for {s.meals.join(", ")}</span>
                 </span>
@@ -269,7 +365,7 @@ export default function WeekPage() {
             ))}
           </ul>
         )}
-        <Link href="/fridge" className="mt-3 inline-block text-sm font-semibold text-leaf-700">Open fridge &amp; shopping list →</Link>
+        <Link href="/fridge" className="mt-3 inline-block py-1 text-sm font-semibold text-leaf-700">Open fridge &amp; shopping list →</Link>
       </section>
       </>)}
 
@@ -373,10 +469,10 @@ function Stat({ label, value, tone, onClick }: { label: string; value: number; t
       type="button"
       onClick={onClick}
       title={`Show ${label.toLowerCase()} this week`}
-      className="card cursor-pointer px-4 py-3 text-left transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:outline-none"
+      className="card flex cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:outline-none sm:block sm:px-4 sm:py-3"
     >
-      <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
-      <p className="text-xs font-semibold text-ink/50">{label}</p>
+      <p className={`text-xl font-extrabold tabular-nums sm:text-2xl ${color}`}>{value}</p>
+      <p className="text-xs leading-tight font-semibold text-ink/50">{label}</p>
     </button>
   );
 }
@@ -427,12 +523,16 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
       } ${!cooked ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       <div className="flex items-start gap-1">
-        <button onClick={onEdit} className="block min-w-0 flex-1 text-left font-semibold leading-snug hover:text-leaf-700" disabled={cooked}>
+        <button
+          onClick={onEdit}
+          className="block min-w-0 flex-1 text-left font-semibold leading-snug break-words hover:text-leaf-700 pointer-coarse:min-h-8 max-sm:text-base"
+          disabled={cooked}
+        >
           {meal.title}
         </button>
         {meal.status === "planned" && (
           <button
-            className="-mt-0.5 -mr-1 shrink-0 rounded px-1 text-xs text-ink/30 hover:bg-red-50 hover:text-red-700"
+            className="-mt-0.5 -mr-1 flex shrink-0 items-center justify-center rounded px-1 text-xs text-ink/30 hover:bg-red-50 hover:text-red-700 max-sm:-my-1.5 max-sm:size-10 pointer-coarse:-my-1.5 pointer-coarse:size-10 pointer-coarse:text-sm"
             disabled={busy}
             onClick={() => run(remove)}
             aria-label={`Remove ${meal.title}`}
@@ -480,7 +580,7 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
           {meal.notes}
         </p>
       )}
-      <div className="mt-1.5 flex flex-wrap gap-1 whitespace-nowrap">
+      <div className="mt-1.5 flex flex-wrap gap-1 whitespace-nowrap max-sm:mt-2 max-sm:gap-1.5 max-sm:[&>button]:flex-1 pointer-coarse:[&>button]:min-h-10">
         {cooked ? (
           <button className="btn-ghost btn-sm" disabled={busy} onClick={() => run(() => api("DELETE", `/api/meals/${meal.id}/cook`))}>
             Undo cooked
@@ -509,5 +609,31 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Height of the app's sticky top bar (0 if it isn't sticky), so the phone day strip can stick
+ * just below it whatever height the bar ends up being.
+ */
+function useStickyHeaderHeight(): number {
+  return useSyncExternalStore(
+    (onChange) => {
+      const header = document.querySelector("header");
+      const ro = header ? new ResizeObserver(onChange) : null;
+      if (header) ro?.observe(header);
+      window.addEventListener("resize", onChange);
+      return () => {
+        ro?.disconnect();
+        window.removeEventListener("resize", onChange);
+      };
+    },
+    () => {
+      const header = document.querySelector("header");
+      if (!header) return 0;
+      const { position } = getComputedStyle(header);
+      return position === "sticky" || position === "fixed" ? Math.round(header.getBoundingClientRect().height) : 0;
+    },
+    () => 0,
   );
 }
