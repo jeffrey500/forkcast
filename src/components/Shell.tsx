@@ -22,7 +22,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-black/5 bg-paper/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-leaf-600 text-white">🍴</span>
+            {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
+            <img src="/logo.svg" alt="" width={34} height={34} className="h-[34px] w-[34px] drop-shadow-sm" />
             <span className="leading-tight">
               <span className="block text-sm font-extrabold">{APP_NAME}</span>
               <span className="block text-[11px] text-ink/50">{state.settings.householdName}</span>

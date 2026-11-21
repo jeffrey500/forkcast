@@ -1,11 +1,17 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { read } from "@/lib/store";
+import { read, update } from "@/lib/store";
+import { rateLimit } from "@/lib/ratelimit";
 import { body, claudeKey, getSettings, handle, HttpError, num, requireMember, str } from "@/lib/server";
 import type { FridgeItem, Recipe } from "@/lib/types";
 
 export const maxDuration = 120;
+
+/** Per-person daily cap so a leaked login can't run up the Claude bill. */
+const DAILY_LIMIT = Math.max(1, parseInt(process.env.IDEAS_DAILY_LIMIT ?? "20", 10) || 20);
+
+type Usage = { day: string; counts: Record<string, number> };
 
 const IdeaSchema = z.object({
   ideas: z.array(
@@ -33,7 +39,8 @@ Rules for every idea:
 Do not repeat recipes the roommates already have.`;
 
 export const POST = handle(async (req: Request) => {
-  await requireMember();
+  const me = await requireMember();
+  rateLimit(`ideas:${me.id}`, 1, 5_000, "One request at a time — give Claude a few seconds.");
   const b = await body(req);
   const prompt = str(b.prompt, 2000);
   const useFridge = b.useFridge !== false;
@@ -45,6 +52,17 @@ export const POST = handle(async (req: Request) => {
   if (!key) {
     throw new HttpError(400, "No Claude API key yet. An admin can add one under Admin → Settings.");
   }
+
+  // Count this request against today's allowance (UTC day) before spending anything.
+  const today = new Date().toISOString().slice(0, 10);
+  await update<Usage>("usage", { day: today, counts: {} }, (u) => {
+    const usage = u.day === today ? u : { day: today, counts: {} };
+    const used = usage.counts[me.id] ?? 0;
+    if (used >= DAILY_LIMIT) {
+      throw new HttpError(429, `You've used today's ${DAILY_LIMIT} Claude requests. More tomorrow!`);
+    }
+    return { data: { day: today, counts: { ...usage.counts, [me.id]: used + 1 } } };
+  });
 
   const [fridge, recipes] = await Promise.all([
     read<FridgeItem[]>("fridge", []),

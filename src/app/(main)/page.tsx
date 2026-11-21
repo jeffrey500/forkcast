@@ -242,8 +242,8 @@ function MealCard({ meal, forecast, onEdit }: { meal: Meal; forecast?: MealForec
           <span className="chip bg-black/5 text-ink/50">Skipped</span>
         ) : (
           <>
-            <span className={`chip ${agreed ? "bg-leaf-100 text-leaf-700" : "bg-amber-100 text-amber-800"}`} title={meal.agreedBy.map(userName).join(", ")}>
-              {agreed ? "Agreed" : "Proposed"} {count}/{fc.needed}
+            <span className={`chip ${agreed ? "bg-leaf-100 text-leaf-700" : "bg-amber-100 text-amber-800"}`} title={`${meal.agreedBy.map(userName).join(", ") || "Nobody yet"} · needs ${fc.needed} to count as agreed`}>
+              {agreed ? "Agreed" : "Proposed"} {count}/{state.users.length}
             </span>
             {readiness === "ok" && <span className="chip bg-sky-50 text-sky-700">In fridge</span>}
             {readiness === "after-shopping" && <span className="chip bg-violet-50 text-violet-700">After shopping</span>}

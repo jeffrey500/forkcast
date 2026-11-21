@@ -34,9 +34,8 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-leaf-600 text-2xl text-white">
-            🍴
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
+          <img src="/logo.svg" alt="" width={64} height={64} className="mx-auto mb-3 h-16 w-16 drop-shadow" />
           <h1 className="text-2xl font-bold">{APP_NAME}</h1>
           <p className="mt-1 text-sm text-ink/60">
             {mode === "login" ? "Sign in to your household" : "Ask to join your household"}

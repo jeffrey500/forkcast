@@ -43,3 +43,6 @@ next-env.d.ts
 # local JSON data (dev)
 /.data
 !.env.example
+
+# local Claude Code config
+/.claude/

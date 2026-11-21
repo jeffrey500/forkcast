@@ -48,7 +48,9 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   const refresh = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
     if (res.status === 401) {
-      hardNavigate("/login");
+      // Session cookie is valid but the account is gone (deleted by an admin):
+      // clear the cookie, or the login page would bounce straight back here.
+      await logout();
       return;
     }
     const data = await res.json().catch(() => ({}));
@@ -84,7 +86,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast(data.error ?? "Something went wrong.", "error");
-        if (res.status === 401) hardNavigate("/login");
+        if (res.status === 401) await logout();
         return null;
       }
       await refresh();

@@ -11,10 +11,14 @@ export interface User {
   role: Role;
   status: UserStatus;
   createdAt: string;
+  /** Consecutive wrong passwords; reset on success. */
+  failedLogins?: number;
+  /** ISO time until which sign-in is blocked after too many wrong passwords. */
+  lockedUntil?: string;
 }
 
-/** User as sent to the browser (no password hash). */
-export type PublicUser = Omit<User, "passwordHash">;
+/** User as sent to the browser (no password hash or lockout info). */
+export type PublicUser = Omit<User, "passwordHash" | "failedLogins" | "lockedUntil">;
 
 export interface Ingredient {
   name: string;
