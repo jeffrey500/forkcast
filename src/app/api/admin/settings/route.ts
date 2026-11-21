@@ -1,5 +1,6 @@
 import { update } from "@/lib/store";
-import { body, getSettings, handle, num, publicSettings, requireAdmin, str } from "@/lib/server";
+import { body, getSettings, handle, HttpError, num, publicSettings, requireAdmin, str } from "@/lib/server";
+import { isDiscordWebhook } from "@/lib/discord";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/types";
 
 const MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"];
@@ -28,6 +29,14 @@ export const PUT = handle(async (req: Request) => {
     }
     if (typeof b.claudeModel === "string" && MODELS.includes(b.claudeModel)) s.claudeModel = b.claudeModel;
     if (typeof b.reminderEmails === "boolean") s.reminderEmails = b.reminderEmails;
+    if (typeof b.reminderDiscord === "boolean") s.reminderDiscord = b.reminderDiscord;
+    if (typeof b.discordWebhookUrl === "string") {
+      const url = b.discordWebhookUrl.trim();
+      if (url && !isDiscordWebhook(url)) {
+        throw new HttpError(400, "That doesn't look like a Discord webhook URL (https://discord.com/api/webhooks/…).");
+      }
+      s.discordWebhookUrl = url; // empty clears it
+    }
     if (typeof b.timezone === "string") {
       try {
         new Intl.DateTimeFormat("en-US", { timeZone: b.timezone });

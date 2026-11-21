@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { APP_NAME } from "@/lib/types";
 import { hardNavigate } from "./AppProvider";
+import { APP_VERSION } from "@/lib/version";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState("");
@@ -83,6 +84,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
             <>Already have an account? <Link className="font-semibold text-leaf-700" href="/login">Sign in</Link></>
           )}
         </p>
+        <p className="mt-6 text-center text-xs text-ink/30">v{APP_VERSION}</p>
       </div>
     </main>
   );

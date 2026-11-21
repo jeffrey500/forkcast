@@ -8,7 +8,7 @@
 
 Vote on the week's meals together, see which days you'll be short on food *before* you get there, and let the fridge keep track of itself.
 
-[Features](#features) · [Screenshots](#screenshots) · [Deploy your own](#deploy-your-own-free) · [Privacy](#your-data-stays-yours) · [Reminders](#email-reminders) · [Security](#lock-down-your-vercel-account) · [Run locally](#run-it-locally)
+[Features](#features) · [Screenshots](#screenshots) · [Deploy your own](#deploy-your-own-free) · [Privacy](#your-data-stays-yours) · [Reminders](#reminders-email-and-discord) · [Security](#lock-down-your-vercel-account) · [Run locally](#run-it-locally)
 
 </div>
 
@@ -26,7 +26,7 @@ Forkcast makes your household's food one shared plan:
 - **Know before you're short.** Forkcast walks through the week day by day, pulling ingredients from the fridge, and tells you exactly which meal comes up short and what's missing.
 - **The fridge updates itself.** Hit **Cooked** and the ingredients come out of the fridge, scaled to how many people you cooked for. Made a mistake? **Undo** puts them back.
 - **Scan your receipt.** Snap the receipt after a grocery run and Forkcast suggests exactly what to add to the fridge, ticking items off the shopping list.
-- **Nobody forgets.** An evening email nudges whoever hasn't voted, warns when tomorrow has nothing agreed, and reminds everyone if planning day slipped by.
+- **Nobody forgets.** An evening email or Discord message nudges whoever hasn't voted, warns when tomorrow has nothing agreed, and reminds everyone if planning day slipped by.
 - **Shop at the right time.** Give a grocery run a day, and Forkcast counts it from that day onward. If you shop on Tuesday, Monday's dinner still shows as short.
 
 ## Features
@@ -40,9 +40,9 @@ Forkcast makes your household's food one shared plan:
 | 📖 **Recipe box** | Your household's recipes, with a "Can make now" badge based on what's in the fridge. |
 | 🥗 **Built-in recipe library** | 30 easy, healthy lunches and dinners (15–40 min), sorted by what you can make right now. One click copies a recipe into your recipe box, sized for your household. |
 | 🧾 **Receipt scanning** | **Quick scan** reads the receipt on your phone for free. **Claude scan** decodes abbreviations, works out amounts and skips non-food. Both match items to your shopping list and the names you already use, and you review everything before it's added. |
-| 📬 **Evening reminders** | One email per person, only when needed: meals waiting on your vote, nothing agreed for tomorrow, or next week still unplanned after planning day. |
+| 📬 **Evening reminders** | By email, Discord, or both, only when needed: meals waiting on your vote, nothing agreed for tomorrow, or next week still unplanned after planning day. Discord gets one message for the household and @mentions whoever's behind. |
 | ✨ **Ask Claude** | *"Something cozy with the leftover chicken"* gets you recipe ideas built around your fridge. Save any idea with one click. |
-| 👤 **Your own profile** | Everyone can change their own display name; nobody can change anyone else's. |
+| 👤 **Your own profile** | Everyone can change their own display name, turn off their reminder emails, and add a Discord ID for @mentions. Nobody can change anyone else's. |
 | 🔐 **Private by design** | Email and password accounts. New members wait for an admin to approve them, and nothing is visible without a login. |
 | 📱 **Works on your phone** | A proper mobile layout with bottom navigation, made for checking the fridge at the store. |
 
@@ -89,7 +89,8 @@ Forkcast is a single Next.js app that runs on Vercel's free tier. No database to
    | `ALLOW_SIGNUPS` | | Set to `false` once everyone has joined, to stop new sign-up requests. |
    | `IDEAS_DAILY_LIMIT` | | Claude requests (ideas + receipt scans) per person per day (default 20). |
    | `CRON_SECRET` | for reminders | A long random string. Vercel sends it to the daily reminder job so nobody else can trigger it. |
-   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | for reminders | Where reminder emails are sent from. See [Email reminders](#email-reminders). |
+   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | for reminders | Where reminder emails are sent from. See [Reminders](#reminders-email-and-discord). |
+   | `DISCORD_WEBHOOK_URL` | | Posts reminders to a Discord channel. You can also paste it in **Admin → Settings** instead. |
    | `EMAIL_FROM` | | Sender, e.g. `Forkcast <you@gmail.com>`. Required if `SMTP_USER` isn't an email address. |
    | `APP_URL` | | Link used in emails. Defaults to your Vercel production URL. |
 
@@ -100,22 +101,38 @@ Forkcast is a single Next.js app that runs on Vercel's free tier. No database to
 
 > **Tip:** leave Vercel's **Git Fork Protection** on (it's on by default). Pull requests from other people's forks then can't run with your environment variables until you approve them.
 
-## Email reminders
+## Reminders (email and Discord)
 
-Every evening (around 8–9 pm US Eastern; change the time in `vercel.json`, which uses UTC), each roommate gets **at most one** email, and only if there's something to say:
+Every evening (around 8–9 pm US Eastern; change the time in `vercel.json`, which uses UTC), Forkcast checks the plan and speaks up only if there's something to say:
 
-- 🗳️ **Meals waiting on your vote:** upcoming meals (next 14 days) you haven't agreed to yet, sent just to you.
-- 🍽️ **Nothing agreed for tomorrow:** sent to everyone, with the empty slots or the meals still waiting on votes.
-- 📅 **Planning day was missed:** sent to everyone, from planning day until the week starts, if next week still has empty days.
+- 🗳️ **Meals waiting on your vote:** upcoming meals (next 14 days) you haven't agreed to yet.
+- 🍽️ **Nothing agreed for tomorrow:** with the empty slots or the meals still waiting on votes.
+- 📅 **Planning day was missed:** from planning day until the week starts, if next week still has empty days.
+
+Admins choose the channels under **Admin → Settings → Evening reminders**: 📧 email, 💬 Discord, or both. They share the same daily job (`CRON_SECRET` is required either way) and the household time zone.
+
+### Email setup
+
+Each roommate gets **at most one** email per evening. Vote reminders go just to you; the rest go to everyone. Don't want them? Click your name in the header and turn off reminder emails under **Your profile**.
 
 **Setup with a Gmail account (free, no domain needed):**
 
 1. Turn on [2-Step Verification](https://myaccount.google.com/security) for the Gmail account that will send the emails.
 2. Create an [app password](https://myaccount.google.com/apppasswords) named "Forkcast".
 3. In Vercel, set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER=` that Gmail address, `SMTP_PASS=` the app password, and a random `CRON_SECRET`. Then redeploy.
-4. In **Admin → Settings**, pick your time zone and click **Send reminders now** to test.
+4. In **Admin → Settings**, pick your time zone and click **Send test email to me**, then **Send reminders now**.
 
 Any SMTP provider works (Resend, Postmark, SendGrid, Fastmail…). If its login isn't an email address, also set `EMAIL_FROM`. Admins can turn the emails off in Settings.
+
+### Discord setup
+
+Discord gets **one** combined message per evening in the channel you pick, with a **Waiting on votes** list.
+
+1. In Discord, open **Server Settings → Integrations → Webhooks → New Webhook**, choose the channel, and click **Copy Webhook URL**.
+2. Paste it in **Admin → Settings → Evening reminders**, or set `DISCORD_WEBHOOK_URL` in Vercel and redeploy (the environment variable wins). The URL stays on the server and never reaches the browser. Only real `https://discord.com/api/webhooks/…` URLs are accepted.
+3. Turn on Discord and click **Send test to Discord**.
+
+**Want an @mention?** In Discord, open **User Settings → Advanced**, turn on **Developer Mode**, then right-click your name and **Copy User ID**. Paste it under **Your profile**. People without an ID are listed by name. Forkcast only pings those user IDs, never `@everyone`.
 
 ## Your data stays yours
 
@@ -130,7 +147,7 @@ This repository holds **code only**, so it's safe to keep public:
 - **Capped AI spend.** Each person gets 20 Claude requests (ideas and receipt scans) per day (change it with `IDEAS_DAILY_LIMIT`), so a leaked password can't run up your API bill.
 - **Safe concurrent edits.** Saves are conditional on the file's version, so two roommates saving at the same moment can't overwrite each other.
 
-*Ask Claude* and *Claude scan* are the only features that send household data to a third party: your request, fridge list or receipt photo goes to the Claude API. *Quick scan* keeps the photo on your device; it only downloads the open-source text reader (Tesseract) from a CDN. Reminder emails go through the SMTP provider you choose.
+*Ask Claude* and *Claude scan* are the only features that send household data to a third party: your request, fridge list or receipt photo goes to the Claude API. *Quick scan* keeps the photo on your device; it only downloads the open-source text reader (Tesseract) from a CDN. Reminder emails go through the SMTP provider you choose. Discord reminders post meal titles and names to the Discord channel you choose.
 
 ## Lock down your Vercel account
 
@@ -169,6 +186,7 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. Witho
 - **Names:** matching is forgiving: "Tomatoes" matches "tomato".
 - **Staples:** salt, pepper and water (editable in Settings) are assumed always on hand and never counted against the fridge.
 - **Claude model:** defaults to Claude Opus 5.5. Admins can switch to Sonnet or Haiku for cheaper requests.
+- **Version:** the running version (e.g. *Forkcast v0.5.0*) shows in the footer, on the login page and in **Admin → Settings**. Every change bumps it; see [`CHANGELOG.md`](CHANGELOG.md) for what's new.
 
 ## Contributing
 

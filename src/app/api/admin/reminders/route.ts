@@ -1,7 +1,8 @@
-import { body, handle, HttpError, requireAdmin } from "@/lib/server";
 import { rateLimit } from "@/lib/ratelimit";
 import { sendReminders } from "@/lib/reminders";
 import { sendEmail, smtpProblem, verifyEmail } from "@/lib/email";
+import { discordProblem, discordWebhook, postDiscord } from "@/lib/discord";
+import { body, getSettings, handle, HttpError, requireAdmin } from "@/lib/server";
 import { APP_NAME } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -17,8 +18,19 @@ export const POST = handle(async (req: Request) => {
   rateLimit(`reminders:${me.id}`, 5, 10 * 60_000, "You just tried that. Wait a few minutes before trying again.");
   const b = await body(req).catch(() => ({}) as Record<string, unknown>);
 
+  if (b.test === "discord") {
+    const { url } = discordWebhook(await getSettings());
+    if (!url) throw new HttpError(400, "Add a Discord webhook URL in Settings first.");
+    try {
+      await postDiscord(url, `✅ **${APP_NAME}** is connected to this channel. Evening reminders will show up here.`);
+    } catch (err) {
+      throw new HttpError(502, discordProblem(err));
+    }
+    return { ok: true, message: "Posted a test message to your Discord channel." };
+  }
+
   try {
-    if (b.test === true) {
+    if (b.test === true || b.test === "email") {
       await verifyEmail();
       await sendEmail({
         to: me.email,

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DAY_NAMES } from "@/lib/dates";
+import { APP_VERSION } from "@/lib/version";
 import type { AgreementRule, PublicUser } from "@/lib/types";
 
 export default function AdminPage() {
@@ -14,7 +15,9 @@ export default function AdminPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold">Admin</h1>
-        <p className="text-sm text-ink/60">Approve roommates and set how planning works.</p>
+        <p className="text-sm text-ink/60">
+          Approve roommates and set how planning works. Running version <b>v{APP_VERSION}</b>.
+        </p>
       </div>
       <Users />
       <SettingsForm />
@@ -118,6 +121,8 @@ function SettingsForm() {
   const [staples, setStaples] = useState(s.staples.join(", "));
   const [claudeModel, setClaudeModel] = useState(s.claudeModel);
   const [reminderEmails, setReminderEmails] = useState(s.reminderEmails);
+  const [reminderDiscord, setReminderDiscord] = useState(s.reminderDiscord);
+  const [discordUrl, setDiscordUrl] = useState("");
   const [timezone, setTimezone] = useState(s.timezone);
   const [reminderResult, setReminderResult] = useState("");
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [s.timezone];
@@ -136,12 +141,15 @@ function SettingsForm() {
       staples: staples.split(",").map((x) => x.trim()).filter(Boolean),
       claudeModel,
       reminderEmails,
+      reminderDiscord,
+      ...(discordUrl ? { discordWebhookUrl: discordUrl } : {}),
       timezone,
       ...(apiKey ? { anthropicApiKey: apiKey } : {}),
     });
     setBusy(false);
     if (ok) {
       setApiKey("");
+      setDiscordUrl("");
       toast("Settings saved.");
     }
   }
@@ -228,17 +236,60 @@ function SettingsForm() {
           )}
         </div>
         <div className="rounded-xl border border-black/10 p-4 md:col-span-2">
-          <h3 className="font-bold">Daily vote reminders</h3>
+          <h3 className="font-bold">Evening reminders</h3>
           <p className="mt-1 text-xs text-ink/60">
-            Every evening, each roommate gets at most one email covering: tomorrow having no agreed meal, next week still
-            being unplanned after planning day, and upcoming meals (next 14 days) they haven&apos;t agreed to yet.
-            Nobody is emailed when there&apos;s nothing to remind them about.
+            Every evening the household is reminded when tomorrow has no agreed meal, when next week is still unplanned after
+            planning day, and about upcoming meals (next 14 days) people haven&apos;t agreed to yet. Nothing is sent when
+            there&apos;s nothing to remind anyone about. Choose where reminders go:
           </p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderEmails} onChange={(e) => setReminderEmails(e.target.checked)} />
-              Send daily reminder emails
-            </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-lg bg-black/[0.03] p-3">
+              <label className="flex items-center gap-2 text-sm font-semibold">
+                <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderEmails} onChange={(e) => setReminderEmails(e.target.checked)} />
+                📧 Email
+              </label>
+              <p className="mt-1 text-xs text-ink/60">One email per person, only about what concerns them. Anyone can opt out under Your profile.</p>
+              <p className={`mt-2 text-xs ${s.emailConfigured ? "text-leaf-700" : "text-amber-800"}`}>
+                {s.emailConfigured ? "✓ Email (SMTP) is set up." : "⚠ Not set up: add SMTP_HOST, SMTP_USER and SMTP_PASS in Vercel (see README)."}
+              </p>
+            </div>
+            <div className="rounded-lg bg-black/[0.03] p-3">
+              <label className="flex items-center gap-2 text-sm font-semibold">
+                <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={reminderDiscord} onChange={(e) => setReminderDiscord(e.target.checked)} />
+                💬 Discord
+              </label>
+              <p className="mt-1 text-xs text-ink/60">
+                One message in a channel, @mentioning whoever still needs to vote (if they&apos;ve added their Discord ID).
+              </p>
+              <label className="label mt-2">Channel webhook URL</label>
+              <input
+                className="input font-mono text-xs"
+                type="password"
+                autoComplete="off"
+                value={discordUrl}
+                onChange={(e) => setDiscordUrl(e.target.value)}
+                disabled={s.discordSource === "env"}
+                placeholder={s.discordSource === "settings" ? "•••••• saved, paste to replace" : "https://discord.com/api/webhooks/…"}
+              />
+              <p className="mt-1 text-xs text-ink/50">
+                {s.discordSource === "env"
+                  ? "Using DISCORD_WEBHOOK_URL from Vercel."
+                  : "In Discord: Server Settings → Integrations → Webhooks → New Webhook → pick the channel → Copy Webhook URL."}
+              </p>
+              {s.discordSource === "settings" && (
+                <button
+                  type="button"
+                  className="btn-danger btn-sm mt-1"
+                  onClick={async () => (await api("PUT", "/api/admin/settings", { discordWebhookUrl: "" })) && toast("Discord webhook removed.")}
+                >
+                  Remove webhook
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Household time zone</label>
               <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
@@ -247,23 +298,19 @@ function SettingsForm() {
                 ))}
               </select>
             </div>
-          </div>
-          <ul className="mt-3 space-y-0.5 text-xs">
-            <li className={s.emailConfigured ? "text-leaf-700" : "text-amber-800"}>
-              {s.emailConfigured ? "✓ Email (SMTP) is set up." : "⚠ Email isn't set up yet: add SMTP_HOST, SMTP_USER and SMTP_PASS in Vercel (see README)."}
-            </li>
-            <li className={s.cronConfigured ? "text-leaf-700" : "text-amber-800"}>
+            <p className={`self-end text-xs ${s.cronConfigured ? "text-leaf-700" : "text-amber-800"}`}>
               {s.cronConfigured ? "✓ Daily job is set up (runs around 8–9 pm US Eastern)." : "⚠ Add CRON_SECRET in Vercel so the daily job can run."}
-            </li>
-          </ul>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+            </p>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
               className="btn-outline btn-sm"
               disabled={!s.emailConfigured}
               onClick={async () => {
                 setReminderResult("Checking the email login and sending you a test…");
-                const r = await api<{ message: string }>("POST", "/api/admin/reminders", { test: true });
+                const r = await api<{ message: string }>("POST", "/api/admin/reminders", { test: "email" });
                 setReminderResult(r ? r.message : "");
               }}
             >
@@ -272,24 +319,36 @@ function SettingsForm() {
             <button
               type="button"
               className="btn-outline btn-sm"
-              disabled={!s.emailConfigured}
+              disabled={s.discordSource === "none"}
+              title={s.discordSource === "none" ? "Save a webhook URL first" : undefined}
+              onClick={async () => {
+                setReminderResult("Posting a test message to Discord…");
+                const r = await api<{ message: string }>("POST", "/api/admin/reminders", { test: "discord" });
+                setReminderResult(r ? r.message : "");
+              }}
+            >
+              Send test to Discord
+            </button>
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={!s.emailConfigured && s.discordSource === "none"}
               onClick={async () => {
                 setReminderResult("Sending…");
-                const r = await api<{ skipped?: string; sent: { name: string; meals: number }[]; failed: { name: string; error: string }[] }>(
-                  "POST",
-                  "/api/admin/reminders",
-                  {},
-                );
+                const r = await api<{
+                  skipped?: string;
+                  sent: { name: string; meals: number }[];
+                  failed: { name: string; error: string }[];
+                  discord?: { posted: boolean; note: string };
+                }>("POST", "/api/admin/reminders", {});
                 if (!r) return setReminderResult("");
-                setReminderResult(
-                  r.skipped ??
-                    (r.sent.length || r.failed.length
-                      ? [
-                          r.sent.length ? `Sent to ${r.sent.map((x) => `${x.name} (${x.meals})`).join(", ")}.` : "",
-                          r.failed.length ? `Failed for ${r.failed.map((x) => x.name).join(", ")}: ${r.failed[0].error}` : "",
-                        ].join(" ")
-                      : "Nothing needs a reminder right now, so no emails were sent."),
-                );
+                if (r.skipped) return setReminderResult(r.skipped);
+                const parts = [
+                  r.sent.length ? `Emailed ${r.sent.map((x) => x.name).join(", ")}.` : "",
+                  r.failed.length ? `Email failed for ${r.failed.map((x) => x.name).join(", ")}: ${r.failed[0].error}` : "",
+                  r.discord ? r.discord.note : "",
+                ].filter(Boolean);
+                setReminderResult(parts.join(" ") || "Nothing needs a reminder right now, so nothing was sent.");
               }}
             >
               Send reminders now

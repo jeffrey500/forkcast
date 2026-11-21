@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { HttpError } from "./errors";
 import { LIBRARY } from "./library";
+import { discordWebhook } from "./discord";
 import { read } from "./store";
 import { SESSION_COOKIE, verifySession } from "./session";
 import {
@@ -37,9 +38,10 @@ export function claudeKey(settings: Settings): { key: string; source: PublicSett
 
 export function publicSettings(s: Settings): PublicSettings {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { anthropicApiKey, ...rest } = s;
+  const { anthropicApiKey, discordWebhookUrl, ...rest } = s;
   return {
     ...rest,
+    discordSource: discordWebhook(s).source,
     claudeKeySource: claudeKey(s).source,
     emailConfigured: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
     cronConfigured: Boolean(process.env.CRON_SECRET),

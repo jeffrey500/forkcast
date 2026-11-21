@@ -15,6 +15,10 @@ export interface User {
   failedLogins?: number;
   /** ISO time until which sign-in is blocked after too many wrong passwords. */
   lockedUntil?: string;
+  /** Personal opt-out of reminder emails (default: on). */
+  emailReminders?: boolean;
+  /** Discord user ID, so Discord reminders can @mention this person. */
+  discordId?: string;
 }
 
 /** User as sent to the browser (no password hash or lockout info). */
@@ -100,8 +104,12 @@ export interface Settings {
   claudeModel: string;
   /** Stored server-side only, never sent to the browser. */
   anthropicApiKey: string;
-  /** Email roommates each evening about upcoming meals they haven't agreed to. */
+  /** Evening reminders by email. */
   reminderEmails: boolean;
+  /** Evening reminders posted to a Discord channel. */
+  reminderDiscord: boolean;
+  /** Discord channel webhook URL. Stored server-side only. */
+  discordWebhookUrl: string;
   /** IANA time zone for "today"/"tomorrow" in reminders, e.g. America/New_York. */
   timezone: string;
 }
@@ -116,10 +124,13 @@ export const DEFAULT_SETTINGS: Settings = {
   claudeModel: "claude-opus-5-5",
   anthropicApiKey: "",
   reminderEmails: true,
+  reminderDiscord: false,
+  discordWebhookUrl: "",
   timezone: "America/New_York",
 };
 
-export type PublicSettings = Omit<Settings, "anthropicApiKey"> & {
+export type PublicSettings = Omit<Settings, "anthropicApiKey" | "discordWebhookUrl"> & {
+  discordSource: "env" | "settings" | "none";
   claudeKeySource: "env" | "settings" | "none";
   /** Whether SMTP is configured so reminder emails can actually be sent. */
   emailConfigured: boolean;

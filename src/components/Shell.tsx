@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Modal } from "./ui";
 import { logout, useApp } from "./AppProvider";
 import { APP_NAME } from "@/lib/types";
+import { APP_VERSION } from "@/lib/version";
 
 const NAV = [
   { href: "/", label: "Week", icon: "📅" },
@@ -58,7 +59,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:pb-12">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-6">{children}</main>
+      <footer className="mx-auto max-w-7xl px-4 pb-28 text-xs text-ink/40 md:pb-8">
+        {APP_NAME} v{APP_VERSION}
+      </footer>
       {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-black/10 bg-white md:hidden">
         {nav.map((n) => (
@@ -81,7 +85,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 function ProfileDialog({ onClose }: { onClose: () => void }) {
   const { state, api, toast } = useApp();
   const [name, setName] = useState(state.me.name);
+  const [emailReminders, setEmailReminders] = useState(state.me.emailReminders !== false);
+  const [discordId, setDiscordId] = useState(state.me.discordId ?? "");
   const [busy, setBusy] = useState(false);
+  const changed =
+    name.trim() !== state.me.name ||
+    emailReminders !== (state.me.emailReminders !== false) ||
+    discordId.trim() !== (state.me.discordId ?? "");
   return (
     <Modal title="Your profile" onClose={onClose}>
       <form
@@ -89,10 +99,10 @@ function ProfileDialog({ onClose }: { onClose: () => void }) {
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
-          const ok = await api("PUT", "/api/me", { name });
+          const ok = await api("PUT", "/api/me", { name, emailReminders, discordId: discordId.trim() });
           setBusy(false);
           if (ok) {
-            toast("Name updated.");
+            toast("Profile saved.");
             onClose();
           }
         }}
@@ -105,10 +115,29 @@ function ProfileDialog({ onClose }: { onClose: () => void }) {
         <div>
           <span className="label">Email</span>
           <p className="text-sm text-ink/70">{state.me.email}</p>
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <input type="checkbox" className="h-4 w-4 accent-leaf-600" checked={emailReminders} onChange={(e) => setEmailReminders(e.target.checked)} />
+            Email me evening reminders
+          </label>
+        </div>
+        <div>
+          <label className="label" htmlFor="profile-discord">Discord user ID (optional)</label>
+          <input
+            id="profile-discord"
+            className="input font-mono"
+            inputMode="numeric"
+            placeholder="e.g. 123456789012345678"
+            value={discordId}
+            onChange={(e) => setDiscordId(e.target.value.replace(/\D/g, ""))}
+          />
+          <p className="mt-1 text-xs text-ink/50">
+            So Discord reminders can @mention you. In Discord: Settings → Advanced → turn on Developer Mode, then right-click your
+            name → Copy User ID.
+          </p>
         </div>
         <div className="flex justify-end gap-2">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" disabled={busy || !name.trim() || name.trim() === state.me.name}>
+          <button className="btn-primary" disabled={busy || !name.trim() || !changed}>
             {busy ? "Saving…" : "Save"}
           </button>
         </div>
