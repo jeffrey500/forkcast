@@ -9,7 +9,7 @@
 
 **The free, self-hosted meal planner for people who share a fridge.**
 
-[![Version 0.8.1](https://img.shields.io/badge/version-0.8.1-2f855a)](CHANGELOG.md)
+[![Version 0.9.0](https://img.shields.io/badge/version-0.9.0-2f855a)](CHANGELOG.md)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
 [![Deploy on Vercel](https://img.shields.io/badge/deploy%20on-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/new)
@@ -18,6 +18,8 @@
 
 Vote on the week's meals together, see which days you'll be short on food *before* you get there,<br>
 split the cooking and the dishes fairly, and let the fridge keep track of itself.
+
+**[▶ Try the live demo](https://forkcast-opal.vercel.app/login)**: click **Try the demo** on the sign-in page. It's a made-up household, and nothing you do is saved.
 
 [Why](#why-forkcast) · [Features](#features) · [How it works](#how-it-works) · [Deploy](#deploy-your-own-free) · [Reminders setup](#set-up-reminders) · [Privacy](#your-data-stays-yours) · [Security](#lock-down-your-vercel-account) · [Run locally](#run-it-locally) · [Good to know](#good-to-know)
 
@@ -241,6 +243,7 @@ This repository holds **code only**, so it's safe to keep public.
 - **No household data in git.** Meals, recipes, fridge contents, shopping lists and accounts live in *your* private Blob store (or a git-ignored `./.data/` folder when running locally). Planning and cooking never create a commit.
 - **No secrets in git.** All keys live in environment variables, and `.env*` files are ignored.
 - **Nothing visible without an approved account.** Every API route checks for one. Pending sign-ups only see their own status. Password hashes and API keys never reach the browser.
+- **The demo can't see your household.** The **Try the demo** button on the sign-in page opens a made-up household that lives only in the visitor's browser tab. Demo requests never read or write your storage, and Claude, emails and Discord are switched off in it.
 - **Hidden from search engines.** The app sends `noindex` headers and a `robots.txt` that blocks all crawlers.
 - **Protected against password guessing.** After eight wrong passwords in a row, an account locks for 15 minutes.
 - **Abuse limits built in.** Sign-in and sign-up are rate-limited per IP, at most 10 sign-ups can wait for approval at once, request bodies are capped at 64 KB, and API changes are only accepted from your own site (CSRF protection).

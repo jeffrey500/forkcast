@@ -178,4 +178,6 @@ export interface AppState {
   fridge: FridgeItem[];
   meals: Meal[];
   shopping: ShoppingItem[];
+  /** True in the public demo (a made-up household; nothing is saved). */
+  demo?: boolean;
 }

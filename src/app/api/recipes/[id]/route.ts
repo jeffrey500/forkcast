@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { read, update } from "@/lib/store";
 import { body, cleanRecipe, handle, HttpError, nowIso, requireMember } from "@/lib/server";
 import { analyzeAndSave } from "@/lib/nutrition";
+import { inDemo } from "@/lib/demo-context";
 import { needsNutrition } from "@/lib/nutrition-shared";
 import type { Meal, Recipe } from "@/lib/types";
 
@@ -26,7 +27,7 @@ export const PUT = handle(async (req: Request, ctx: Ctx) => {
     data: ms.map((m) => (m.recipeId === id && m.status === "planned" ? { ...m, title: recipe.name } : m)),
   }));
   // Re-estimate calories in the background if the ingredients or servings changed.
-  if (needsNutrition(recipe)) after(() => analyzeAndSave(recipe.id));
+  if (needsNutrition(recipe) && !inDemo()) after(() => analyzeAndSave(recipe.id));
   return { recipe };
 });
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { formatAmount, titleCase } from "@/lib/units";
 import { formatKcal } from "@/lib/nutrition-shared";
-import type { Ingredient } from "@/lib/types";
+import { APP_NAME, type Ingredient } from "@/lib/types";
 
 interface Idea {
   name: string;
@@ -44,7 +44,8 @@ export default function IdeasPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState<Set<string>>(new Set());
-  const noKey = state.settings.claudeKeySource === "none";
+  // The demo has no Claude key; it answers with samples from the built-in library instead.
+  const noKey = state.settings.claudeKeySource === "none" && !state.demo;
 
   async function ask(e?: React.FormEvent) {
     e?.preventDefault();
@@ -89,6 +90,13 @@ export default function IdeasPage() {
         <h1 className="text-2xl font-extrabold">Ask Claude for ideas</h1>
         <p className="text-sm text-ink/60">Describe what you&apos;re craving. Claude can look at what&apos;s in the fridge and avoids recipes you already have.</p>
       </div>
+
+      {state.demo && (
+        <div className="rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          <b>Demo:</b> ideas here are samples from the built-in recipe library. In your own {APP_NAME}, Claude writes them from your
+          request and what&apos;s in the fridge.
+        </div>
+      )}
 
       {noKey && (
         <div className="rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-900">

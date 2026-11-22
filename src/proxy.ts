@@ -24,7 +24,9 @@ export async function proxy(req: NextRequest) {
   if (PUBLIC_PAGES.includes(pathname)) {
     return signedIn ? NextResponse.redirect(new URL("/", req.url)) : NextResponse.next();
   }
-  if (!signedIn) return NextResponse.redirect(new URL("/login", req.url));
+  // The public demo only needs the page shells; its data comes from /api/demo, never the real household.
+  const demo = req.cookies.get("fc_demo")?.value === "1";
+  if (!signedIn && !demo) return NextResponse.redirect(new URL("/login", req.url));
   return NextResponse.next();
 }
 

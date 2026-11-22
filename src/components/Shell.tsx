@@ -7,6 +7,7 @@ import { Modal } from "./ui";
 import { logout, useApp } from "./AppProvider";
 import { APP_NAME } from "@/lib/types";
 import { APP_VERSION } from "@/lib/version";
+import { resetDemo, setDemoAs } from "@/lib/demo-client";
 
 type NavItem = { href: string; label: string; short: string; icon: React.ReactNode };
 
@@ -121,9 +122,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             >
               <span aria-hidden>👤</span> <span className="hidden truncate sm:inline">{state.me.name}</span>
             </button>
-            <button className="btn-ghost btn-sm whitespace-nowrap" onClick={logout}>Sign out</button>
+            <button className="btn-ghost btn-sm whitespace-nowrap" onClick={logout}>{state.demo ? "Exit demo" : "Sign out"}</button>
           </div>
         </div>
+        {state.demo && <DemoBanner />}
       </header>
       <main className="px-safe mx-auto max-w-7xl pt-4 pb-6 sm:pt-6">{children}</main>
       <footer className="px-safe pb-nav mx-auto max-w-7xl text-xs text-ink/40 md:pb-8">
@@ -158,6 +160,49 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           })}
         </div>
       </nav>
+    </div>
+  );
+}
+
+/** Shown across the top of the public demo: what it is, whose eyes you're seeing it through, and a reset. */
+function DemoBanner() {
+  const { state, refresh, toast } = useApp();
+  return (
+    <div className="border-t border-amber-200/70 bg-amber-50 text-amber-950">
+      <div className="px-safe mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1.5 py-1.5 text-xs sm:text-sm">
+        <p className="min-w-0 flex-1 basis-full sm:basis-auto">
+          <b>Demo household.</b> Click around freely: nothing you do is saved.
+        </p>
+        <label className="flex items-center gap-1.5">
+          <span className="text-amber-900/70">Viewing as</span>
+          <select
+            className="rounded-md border border-amber-300 bg-white py-0.5 pr-6 pl-1.5 font-semibold"
+            value={state.me.id}
+            onChange={async (e) => {
+              setDemoAs(e.target.value);
+              await refresh();
+            }}
+          >
+            {state.users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+                {u.role === "admin" ? " (admin)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950"
+          onClick={async () => {
+            resetDemo();
+            await refresh();
+            toast("The demo household is back to how it started.");
+          }}
+        >
+          Start over
+        </button>
+      </div>
     </div>
   );
 }

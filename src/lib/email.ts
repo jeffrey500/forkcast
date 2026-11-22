@@ -1,6 +1,7 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { SetupError } from "./errors";
+import { assertNotDemo } from "./demo-context";
 
 /**
  * Sends mail over SMTP. Works with a Gmail account (smtp.gmail.com + an app
@@ -35,6 +36,7 @@ function getTransport() {
 }
 
 export async function sendEmail(msg: { to: string; subject: string; text: string; html: string }) {
+  assertNotDemo("Emails are switched off in the demo.");
   const user = process.env.SMTP_USER ?? "";
   // Gmail-style logins are an address; Resend/SendGrid logins aren't, so they need EMAIL_FROM.
   if (!process.env.EMAIL_FROM && !user.includes("@")) {
@@ -46,6 +48,7 @@ export async function sendEmail(msg: { to: string; subject: string; text: string
 
 /** Check the SMTP login works, without sending anything. */
 export async function verifyEmail() {
+  assertNotDemo("Emails are switched off in the demo.");
   await getTransport().verify();
 }
 

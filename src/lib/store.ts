@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { get, head, put, BlobAccessError, BlobError, BlobNotFoundError, BlobPreconditionFailedError, BlobStoreNotFoundError } from "@vercel/blob";
 import { SetupError } from "./errors";
+import { demoContext } from "./demo-context";
 
 /**
  * JSON-file storage.
@@ -82,6 +83,9 @@ async function readRaw<T>(name: Collection, fallback: T): Promise<Snapshot<T>> {
 }
 
 export async function read<T>(name: Collection, fallback: T): Promise<T> {
+  // Demo requests only ever see their own throwaway copy.
+  const demo = demoContext();
+  if (demo) return structuredClone((demo.db[name] as T | undefined) ?? fallback);
   return (await readRaw(name, fallback)).data;
 }
 
@@ -127,6 +131,13 @@ export async function update<T, R = void>(
   fallback: T,
   fn: (current: T) => { data: T; result?: R } | Promise<{ data: T; result?: R }>,
 ): Promise<R> {
+  const demo = demoContext();
+  if (demo) {
+    // Demo: change the in-memory copy only. Nothing reaches real storage.
+    const { data, result } = await fn(structuredClone((demo.db[name] as T | undefined) ?? fallback));
+    demo.db[name] = data;
+    return result as R;
+  }
   assertWritableEnv();
   if (blobEnabled()) {
     const ATTEMPTS = 6;

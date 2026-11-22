@@ -2,6 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { AppState, PublicUser } from "@/lib/types";
+import { installDemoFetch } from "@/lib/demo-client";
+
+// In the public demo, API calls go to the throwaway demo household instead (see demo-client.ts).
+installDemoFetch();
 
 type Toast = { id: number; text: string; tone: "ok" | "error" };
 
@@ -68,6 +72,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
+    installDemoFetch();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data load
     refresh();
     // Pick up roommates' changes when coming back to the tab.

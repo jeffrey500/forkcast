@@ -2,6 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { update } from "./store";
 import { rateLimit } from "./ratelimit";
+import { assertNotDemo } from "./demo-context";
 import { claudeKey, getSettings, HttpError } from "./server";
 import type { Settings, User } from "./types";
 
@@ -15,6 +16,7 @@ type Usage = { day: string; counts: Record<string, number> };
  * person isn't spamming, and they're within today's allowance.
  */
 export async function claudeFor(me: User): Promise<{ client: Anthropic; settings: Settings }> {
+  assertNotDemo("Claude is switched off in the demo. In your own Forkcast it reads receipts and writes meal ideas.");
   rateLimit(`claude:${me.id}`, 1, 5_000, "One request at a time — give Claude a few seconds.");
   const settings = await getSettings();
   const { key } = claudeKey(settings);

@@ -5,6 +5,7 @@ import { HttpError } from "./errors";
 import { LIBRARY } from "./library";
 import { discordWebhook } from "./discord";
 import { read } from "./store";
+import { demoContext } from "./demo-context";
 import { titleCase } from "./units";
 import { nutritionBasis } from "./nutrition-shared";
 import { SESSION_COOKIE, verifySession } from "./session";
@@ -43,6 +44,10 @@ export function claudeKey(settings: Settings): { key: string; source: PublicSett
 export function publicSettings(s: Settings): PublicSettings {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { anthropicApiKey, discordWebhookUrl, ...rest } = s;
+  if (demoContext()) {
+    // The demo never uses this deployment's keys or mail setup, and doesn't reveal them either.
+    return { ...rest, discordSource: "none", claudeKeySource: "none", emailConfigured: false, cronConfigured: false };
+  }
   return {
     ...rest,
     discordSource: discordWebhook(s).source,
@@ -54,6 +59,11 @@ export function publicSettings(s: Settings): PublicSettings {
 
 /** The signed-in user, whatever their approval status. */
 export async function currentUser(): Promise<User | null> {
+  const demo = demoContext();
+  if (demo) {
+    const users = (await read<User[]>("users", [])).filter((u) => u.status === "approved");
+    return users.find((u) => u.id === demo.meId) ?? users.find((u) => u.role === "admin") ?? users[0] ?? null;
+  }
   const jar = await cookies();
   const id = await verifySession(jar.get(SESSION_COOKIE)?.value);
   if (!id) return null;

@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { read, update } from "./store";
+import { assertNotDemo, inDemo } from "./demo-context";
 import { claudeKey, cleanNutritionFacts, getSettings, HttpError, nowIso } from "./server";
 import { needsNutrition, nutritionBasis } from "./nutrition-shared";
 import type { NutritionFacts, Recipe, Settings } from "./types";
@@ -42,6 +43,7 @@ export async function analyzeRecipeNutrition(
   settings: Settings,
   key: string,
 ): Promise<NutritionFacts> {
+  assertNotDemo("Calorie analysis is switched off in the demo.");
   const client = new Anthropic({ apiKey: key });
   const ingredients = recipe.ingredients.length
     ? recipe.ingredients.map((i) => `- ${[i.quantity || "", i.unit, i.name].filter(Boolean).join(" ")}`).join("\n")
@@ -105,6 +107,7 @@ export async function saveNutrition(
  * Never throws: failures are logged and reported as a status.
  */
 export async function analyzeAndSave(recipeId: string): Promise<AnalyzeStatus> {
+  if (inDemo()) return "no-key";
   try {
     const settings = await getSettings();
     const { key } = claudeKey(settings);

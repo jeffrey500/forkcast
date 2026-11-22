@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { APP_NAME } from "@/lib/types";
 import { hardNavigate } from "./AppProvider";
 import { APP_VERSION } from "@/lib/version";
+import { endDemo, startDemo } from "@/lib/demo-client";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     e.preventDefault();
     setBusy(true);
     setError("");
+    endDemo(); // signing in for real leaves the demo
     const res = await fetch(`/api/auth/${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,6 +136,20 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
             <>Already have an account? <Link className="font-semibold text-leaf-700" href="/login">Sign in</Link></>
           )}
         </p>
+        <div className="mt-6 rounded-2xl border border-dashed border-leaf-600/30 bg-leaf-50/70 px-5 py-4 text-center">
+          <p className="text-sm font-semibold">Just looking around?</p>
+          <p className="mt-0.5 text-xs text-ink/60">Explore a made-up household. Nothing you do is saved.</p>
+          <button
+            type="button"
+            className="btn-outline mt-3 w-full bg-white"
+            onClick={() => {
+              startDemo();
+              hardNavigate("/");
+            }}
+          >
+            Try the demo
+          </button>
+        </div>
         <p className="mt-6 text-center text-xs text-ink/30">v{APP_VERSION}</p>
       </div>
     </main>

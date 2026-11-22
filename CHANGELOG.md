@@ -2,6 +2,9 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.9.0
+- **Try the demo.** The sign-in page has a "Try the demo" button that opens a made-up household (Maple St. Apartment) anyone can click around in. You can switch between roommates to see votes from each side, and "Start over" resets it. The demo lives only in the visitor's browser tab: nothing is saved, it never sees your real household, and Claude, emails and Discord are switched off. The Ideas page shows samples from the built-in recipe library instead.
+
 ## 0.8.1
 - README refreshed with new screenshots: calorie chips, the month calendar, and the phone layout.
 

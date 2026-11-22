@@ -1,4 +1,5 @@
 import { read } from "@/lib/store";
+import { inDemo } from "@/lib/demo-context";
 import { currentUser, getSettings, handle, HttpError, publicSettings, publicUser } from "@/lib/server";
 import type { AppState, FridgeItem, Meal, Recipe, ShoppingItem, User } from "@/lib/types";
 
@@ -26,6 +27,7 @@ export const GET = handle(async () => {
     fridge,
     meals,
     shopping,
+    ...(inDemo() ? { demo: true } : {}),
   };
   return state;
 });

@@ -1,5 +1,6 @@
 import "server-only";
 import type { PublicSettings, Settings } from "./types";
+import { assertNotDemo } from "./demo-context";
 
 /**
  * Discord reminders go through a channel webhook (Server Settings → Integrations
@@ -29,6 +30,7 @@ class DiscordError extends Error {
 
 /** Post a message; only the listed user IDs can be pinged (never @everyone). */
 export async function postDiscord(url: string, content: string, mentionIds: string[] = []) {
+  assertNotDemo("Discord messages are switched off in the demo.");
   const res = await fetch(`${url}?wait=true`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
