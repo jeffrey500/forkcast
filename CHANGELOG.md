@@ -2,6 +2,9 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.8.1
+- README refreshed with new screenshots: calorie chips, the month calendar, and the phone layout.
+
 ## 0.8.0
 - **Made for phones.** Every page is tuned for a phone browser: bigger tap targets, no sideways scrolling, bottom-sheet dialogs, no zoom-in when typing, and room for the iPhone home bar. The week planner shows one day at a time on a phone with a day picker.
 - **Add to Home Screen:** Forkcast can be installed like an app (icon, full-screen, theme colour).

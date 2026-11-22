@@ -9,7 +9,7 @@
 
 **The free, self-hosted meal planner for people who share a fridge.**
 
-[![Version 0.7.0](https://img.shields.io/badge/version-0.7.0-2f855a)](CHANGELOG.md)
+[![Version 0.8.1](https://img.shields.io/badge/version-0.8.1-2f855a)](CHANGELOG.md)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
 [![Deploy on Vercel](https://img.shields.io/badge/deploy%20on-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/new)
@@ -27,7 +27,7 @@ split the cooking and the dishes fairly, and let the fridge keep track of itself
 
 Living with roommates usually means a group chat full of *"what are we eating?"*, three bags of rice nobody remembers buying, and finding out at 7 pm that someone used the last of the chicken. Forkcast turns your household's food into one shared plan: everyone proposes and votes on meals, the app checks the plan against the fridge day by day, and cooking a meal takes its ingredients out of the fridge for you. It runs on Vercel's free tier, with your data in your own private storage.
 
-![Forkcast's week planner: meals for each day with votes, "In fridge", "After shopping" and "Short" badges, and the cook and dishwasher for each meal](docs/screenshots/week.png)
+![Forkcast's week planner: meals for each day with votes, "In fridge", "After shopping" and "Short" badges, calories per serving, a per-person total for each day, and the cook and dishwasher for each meal](docs/screenshots/week.png)
 
 <p align="center"><sub>Screenshots use a made-up demo household.</sub></p>
 
@@ -42,6 +42,10 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 - **Repeat last week.** Liked last week? One click fills just the empty slots with the same meals.
 - **Week or month.** Flip to the calendar to see which days had meals planned or made, jump to any date, and click a day to open its week. The numbers at the top of the week (planned, waiting on votes, short on food, cooked) open the list of meals behind them.
 - **Your slots, your way.** Lunch, dinner, or any slots you like. Drag meals between days, skip them, or remove them from the plan.
+
+<p align="center">
+  <img src="docs/screenshots/calendar.png" alt="Month calendar: each day lists its meals, marked as made, agreed, proposed or short on food, with today highlighted" width="820">
+</p>
 
 ### 🧑‍🍳 Who cooks and who cleans
 
@@ -74,22 +78,12 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 - **Claude scan** decodes store abbreviations, works out amounts and skips non-food.
 - **Smart matching.** Both match items to your shopping list and to the food names you already use, and tick them off the list.
 - **You stay in charge.** Review every item before it's added; untick anything you don't want in the fridge.
-- **Made for the store.** A proper mobile layout with bottom navigation, for checking the fridge mid-aisle.
 
-<table>
-  <tr>
-    <td width="66%" valign="top"><img src="docs/screenshots/receipt.png" alt="Receipt scan review: matched items ready to add to the fridge, with paper towels unticked"></td>
-    <td width="34%" valign="top" align="center"><img src="docs/screenshots/mobile.png" alt="The week planner on a phone, with bottom navigation" width="260"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Review a scan before anything is added</sub></td>
-    <td align="center"><sub>The week planner on a phone</sub></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/screenshots/receipt.png" alt="Receipt scan review: matched items ready to add to the fridge, with paper towels unticked" width="560">
+</p>
 
 ### 📖 Recipes
-
-- **Calories, automatically.** Saving a recipe gets a per-serving estimate (calories, protein, carbs, fat) from Claude in the background; library recipes have built-in estimates. Meals show ~kcal per serving and each day shows a rough per-person total.
 
 - **Your recipe box.** The household's own recipes, with a **Can make now** badge based on what's in the fridge.
 - **A built-in library.** 30 easy, healthy lunches and dinners (15–40 min), sorted by what you can make right now and filterable.
@@ -99,6 +93,13 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 <p align="center">
   <img src="docs/screenshots/library.png" alt="Built-in recipe library with filters and an 'Add to our recipes' button on each recipe" width="820">
 </p>
+
+### 🔥 Calories, automatically
+
+- **Estimated for you.** Save a recipe and Claude works out calories, protein, carbs and fat per serving in the background. Change the ingredients and it's redone.
+- **On every meal.** Meal cards show **~kcal per serving**, and each day shows a rough **per-person total**.
+- **No key needed for the library.** All 30 built-in recipes come with estimates, and Claude's meal ideas bring their own.
+- **Kept in check.** Automatic estimates are capped per household per day, and admins can fill in older recipes in one click.
 
 ### 📬 Evening reminders
 
@@ -122,8 +123,20 @@ Living with roommates usually means a group chat full of *"what are we eating?"*
 
 ### 📱 Made for your phone
 
-- **Phone-first layout.** One day at a time with a day picker, big tap targets, bottom navigation and bottom-sheet dialogs. No sideways scrolling and no zooming in when you type.
+- **One day at a time.** A day picker with a dot for each meal; tap a day or swipe to switch.
+- **Built for thumbs.** Big tap targets, bottom navigation, bottom-sheet dialogs, and no sideways scrolling or zooming in when you type. Check the fridge mid-aisle.
 - **Add to Home Screen.** Open Forkcast in Safari or Chrome and choose *Add to Home Screen*: it gets its own icon and opens full screen like an app.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/mobile.png" alt="The week planner on a phone: day picker, today's meals with calories, and bottom navigation" width="260"></td>
+    <td align="center"><img src="docs/screenshots/mobile-fridge.png" alt="The fridge and shopping page on a phone" width="260"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The week, one day at a time</sub></td>
+    <td align="center"><sub>Fridge and shopping in the store</sub></td>
+  </tr>
+</table>
 
 ## How it works
 
