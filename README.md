@@ -9,7 +9,7 @@
 
 **The free, self-hosted meal planner for people who share a fridge.**
 
-[![Version 0.9.0](https://img.shields.io/badge/version-0.9.0-2f855a)](CHANGELOG.md)
+[![Version 0.9.1](https://img.shields.io/badge/version-0.9.1-2f855a)](CHANGELOG.md)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
 [![Deploy on Vercel](https://img.shields.io/badge/deploy%20on-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/new)

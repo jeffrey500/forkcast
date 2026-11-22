@@ -44,7 +44,8 @@ export default function FridgePage() {
   const shopping = [...state.shopping].sort((a, b) => (a.plannedDate ?? "9999").localeCompare(b.plannedDate ?? "9999"));
 
   return (
-    <div className="space-y-6">
+    // Form-heavy page: keep it at a comfortable width on very wide screens.
+    <div className="mx-auto max-w-7xl space-y-6">
       <datalist id="ingredient-names">
         {ingredientNames.map((n) => (
           <option key={n} value={n} />

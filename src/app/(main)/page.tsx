@@ -250,8 +250,11 @@ export default function WeekPage() {
         </div>
       </nav>
 
+      {/* Columns follow the space actually available (container queries), so a day never gets squeezed:
+          2 on tablets, 3 then 4 on laptops and desktops, all 7 in one row only on very wide screens. */}
+      <div className="@container">
       <div
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7"
+        className="grid gap-3 sm:grid-cols-2 @min-[49rem]:grid-cols-3 @min-[65rem]:grid-cols-4 @min-[112rem]:grid-cols-7"
         onTouchStart={(e) => {
           const t = e.touches[0];
           swipe.current = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
@@ -324,6 +327,7 @@ export default function WeekPage() {
             </section>
           );
         })}
+      </div>
       </div>
       <p className="hidden text-xs text-ink/50 sm:pointer-fine:block">Tip: drag a meal onto another day or slot to move it.</p>
       <p className="text-xs text-ink/50 sm:pointer-fine:hidden">

@@ -12,7 +12,8 @@ export default function AdminPage() {
     return <p className="text-sm text-ink/60">Only admins can see this page.</p>;
   }
   return (
-    <div className="space-y-8">
+    // Form-heavy page: keep it at a comfortable width on very wide screens.
+    <div className="mx-auto max-w-7xl space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold">Admin</h1>
         <p className="text-sm text-ink/60">

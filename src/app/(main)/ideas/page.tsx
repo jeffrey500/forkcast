@@ -85,7 +85,8 @@ export default function IdeasPage() {
   }
 
   return (
-    <div className="space-y-6">
+    // Form-heavy page: keep it at a comfortable width on very wide screens.
+    <div className="mx-auto max-w-7xl space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold">Ask Claude for ideas</h1>
         <p className="text-sm text-ink/60">Describe what you&apos;re craving. Claude can look at what&apos;s in the fridge and avoids recipes you already have.</p>

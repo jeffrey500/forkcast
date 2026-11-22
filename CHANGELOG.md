@@ -2,6 +2,9 @@
 
 Every change bumps the version: fixes bump the patch number, features bump the minor number.
 
+## 0.9.1
+- **Week planner no longer squeezed on big screens.** Day columns now size to the space actually available: 2, 3 or 4 per row on laptops and desktops, and all 7 in one row only on very wide screens (where the page also widens to fit them). Meal cards keep their badges and buttons on one line instead of stacking. Fridge, Ideas and Admin stay at a comfortable width on wide screens; phones are unchanged.
+
 ## 0.9.0
 - **Try the demo.** The sign-in page has a "Try the demo" button that opens a made-up household (Maple St. Apartment) anyone can click around in. You can switch between roommates to see votes from each side, and "Start over" resets it. The demo lives only in the visitor's browser tab: nothing is saved, it never sees your real household, and Claude, emails and Discord are switched off. The Ideas page shows samples from the built-in recipe library instead.
 

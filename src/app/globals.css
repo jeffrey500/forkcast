@@ -107,6 +107,16 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Page width: 80rem, widening on very large screens so the week planner fits all seven days in one row. */
+@utility app-width {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  @media (min-width: 1900px) {
+    max-width: 116rem;
+  }
+}
+
 @utility px-safe {
   padding-left: max(1rem, env(safe-area-inset-left, 0px));
   padding-right: max(1rem, env(safe-area-inset-right, 0px));

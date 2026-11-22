@@ -90,7 +90,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="pt-safe sticky top-0 z-30 border-b border-black/5 bg-paper/90 backdrop-blur">
-        <div className="px-safe mx-auto flex max-w-7xl items-center gap-2 py-2 sm:gap-3 sm:py-3">
+        <div className="px-safe app-width flex items-center gap-2 py-2 sm:gap-3 sm:py-3">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
             <img src="/logo.svg" alt="" width={34} height={34} className="h-[30px] w-[30px] shrink-0 drop-shadow-sm sm:h-[34px] sm:w-[34px]" />
@@ -127,8 +127,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {state.demo && <DemoBanner />}
       </header>
-      <main className="px-safe mx-auto max-w-7xl pt-4 pb-6 sm:pt-6">{children}</main>
-      <footer className="px-safe pb-nav mx-auto max-w-7xl text-xs text-ink/40 md:pb-8">
+      <main className="px-safe app-width pt-4 pb-6 sm:pt-6">{children}</main>
+      <footer className="px-safe pb-nav app-width text-xs text-ink/40 md:pb-8">
         {APP_NAME} v{APP_VERSION}
       </footer>
       {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
@@ -169,7 +169,7 @@ function DemoBanner() {
   const { state, refresh, toast } = useApp();
   return (
     <div className="border-t border-amber-200/70 bg-amber-50 text-amber-950">
-      <div className="px-safe mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1.5 py-1.5 text-xs sm:text-sm">
+      <div className="px-safe app-width flex flex-wrap items-center gap-x-4 gap-y-1.5 py-1.5 text-xs sm:text-sm">
         <p className="min-w-0 flex-1 basis-full sm:basis-auto">
           <b>Demo household.</b> Click around freely: nothing you do is saved.
         </p>

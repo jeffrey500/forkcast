@@ -159,7 +159,7 @@ export default function RecipesPage() {
           <button className="font-semibold text-leaf-700 underline" onClick={() => setTab("library")}>recipe library</button>, or ask Claude for ideas.
         </EmptyState>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 min-[1900px]:grid-cols-4">
           {shown.map((r) => {
             const missing = missingNow.get(r.id) ?? 0;
             const nutrition = currentNutrition(r);

@@ -88,7 +88,7 @@ export default function RecipeLibrary({ onPlan }: { onPlan: (recipe: Recipe) => 
         {shown.length} easy, healthy recipes. Ones you can make with what&apos;s in the fridge come first. Adding one copies it into your recipes, sized for {householdSize}.
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 min-[1900px]:grid-cols-4">
         {shown.map((r) => {
           const miss = missing.get(r.id) ?? 0;
           const isAdded = added.has(r.id);
